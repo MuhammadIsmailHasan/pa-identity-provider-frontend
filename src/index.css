@@ -1,0 +1,106 @@
+/* Google Font - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --md-sys-color-primary: #00695c;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-surface: #f8fafc;
+  --md-sys-color-surface-container: #ffffff;
+  --md-sys-color-outline: #c4c7c5;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc;
+  color: #191c1e;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+/* Material 3 Elevation shadows */
+.m3-elevation-1 {
+  box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.m3-elevation-2 {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.06), 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+}
+
+.m3-elevation-3 {
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Clean Material Card */
+.material-card {
+  background-color: #ffffff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 10px -2px rgba(0, 0, 0, 0.02);
+}
+
+/* Clean Material Input */
+.ant-input-affix-wrapper {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  padding: 10px 16px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.ant-input-affix-wrapper:hover {
+  border-color: #cbd5e1 !important;
+  background-color: #ffffff !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  background-color: #ffffff !important;
+  border-color: #00695c !important;
+  box-shadow: 0 0 0 3px rgba(0, 105, 92, 0.16) !important;
+}
+
+/* Material Filled Button */
+.btn-material-primary {
+  background: #00695c !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important; /* Full pill shape */
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 2px 6px rgba(0, 105, 92, 0.25) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-material-primary:hover {
+  background: #004d40 !important;
+  box-shadow: 0 4px 12px rgba(0, 105, 92, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-material-primary:active {
+  transform: translateY(0px) !important;
+}
+
+/* Subtle background pattern */
+.bg-material-subtle {
+  background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 40%, #ffffff 100%);
+}

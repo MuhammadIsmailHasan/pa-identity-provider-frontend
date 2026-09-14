@@ -1,17 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { roleMappingService } from '../services/roleMappingService';
-import type { RoleMappingCreate, RoleOverrideCreate } from '../types/oauth';
+import type { RoleMappingCreate } from '../types/oauth';
 
 export const ROLE_KEYS = {
   all: ['roles'] as const,
-  mappings: () => [...ROLE_KEYS.all, 'mappings'] as const,
-  overrides: () => [...ROLE_KEYS.all, 'overrides'] as const,
+  mappings: (oauthClientId?: number) => [...ROLE_KEYS.all, 'mappings', oauthClientId ?? 'all'] as const,
 };
 
-export function useRoleMappings() {
+export function useRoleMappings(oauthClientId?: number) {
   return useQuery({
-    queryKey: ROLE_KEYS.mappings(),
-    queryFn: roleMappingService.listMappings,
+    queryKey: ROLE_KEYS.mappings(oauthClientId),
+    queryFn: () => roleMappingService.listMappings(oauthClientId),
   });
 }
 
@@ -19,9 +18,7 @@ export function useCreateRoleMapping() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: RoleMappingCreate) => roleMappingService.createMapping(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROLE_KEYS.mappings() });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ROLE_KEYS.all }),
   });
 }
 
@@ -29,35 +26,6 @@ export function useDeleteRoleMapping() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => roleMappingService.deleteMapping(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROLE_KEYS.mappings() });
-    },
-  });
-}
-
-export function useRoleOverrides() {
-  return useQuery({
-    queryKey: ROLE_KEYS.overrides(),
-    queryFn: roleMappingService.listOverrides,
-  });
-}
-
-export function useCreateRoleOverride() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: RoleOverrideCreate) => roleMappingService.createOverride(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROLE_KEYS.overrides() });
-    },
-  });
-}
-
-export function useDeleteRoleOverride() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => roleMappingService.deleteOverride(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROLE_KEYS.overrides() });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ROLE_KEYS.all }),
   });
 }

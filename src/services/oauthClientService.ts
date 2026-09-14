@@ -1,5 +1,13 @@
 import api from '../config/api';
-import type { OAuthClient, OAuthClientCreate, OAuthClientWithSecret } from '../types/oauth';
+import type {
+  ClientRole,
+  ClientRoleCreate,
+  ClientRoleUpdate,
+  OAuthClient,
+  OAuthClientCreate,
+  OAuthClientUpdate,
+  OAuthClientWithSecret,
+} from '../types/oauth';
 
 export const oauthClientService = {
   list: async (): Promise<OAuthClient[]> => {
@@ -17,7 +25,31 @@ export const oauthClientService = {
     return response.data;
   },
 
+  update: async (id: number, data: OAuthClientUpdate): Promise<OAuthClient> => {
+    const response = await api.put<OAuthClient>(`/api/v1/oauth-clients/${id}`, data);
+    return response.data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/v1/oauth-clients/${id}`);
+  },
+
+  listRoles: async (clientId: number): Promise<ClientRole[]> => {
+    const response = await api.get<ClientRole[]>(`/api/v1/oauth-clients/${clientId}/roles`);
+    return response.data;
+  },
+
+  createRole: async (clientId: number, data: ClientRoleCreate): Promise<ClientRole> => {
+    const response = await api.post<ClientRole>(`/api/v1/oauth-clients/${clientId}/roles`, data);
+    return response.data;
+  },
+
+  updateRole: async (clientId: number, roleId: number, data: ClientRoleUpdate): Promise<ClientRole> => {
+    const response = await api.put<ClientRole>(`/api/v1/oauth-clients/${clientId}/roles/${roleId}`, data);
+    return response.data;
+  },
+
+  deleteRole: async (clientId: number, roleId: number): Promise<void> => {
+    await api.delete(`/api/v1/oauth-clients/${clientId}/roles/${roleId}`);
   },
 };

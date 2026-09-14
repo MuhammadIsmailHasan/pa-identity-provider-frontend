@@ -10,6 +10,8 @@ import {
   CloseOutlined,
 } from '@ant-design/icons';
 import { authService } from '../../services/authService';
+import { getErrorMessage } from '../../utils/apiError';
+import { ROUTES } from '../../config/routes';
 
 export default function OAuthAuthorizePage() {
   const [searchParams] = useSearchParams();
@@ -19,6 +21,7 @@ export default function OAuthAuthorizePage() {
   const [error, setError] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
   const [appInfo, setAppInfo] = useState<{ client_id: string; scope: string } | null>(null);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
   const clientId = searchParams.get('client_id') || '';
   const redirectUri = searchParams.get('redirect_uri') || '';
@@ -43,9 +46,8 @@ export default function OAuthAuthorizePage() {
           nonce,
         });
         setAppInfo({ client_id: response.client_id, scope: response.scope });
-      } catch (err: any) {
-        const message = err?.response?.data?.detail || 'Aplikasi client tidak valid atau belum terdaftar.';
-        setClientError(message);
+      } catch (err) {
+        setClientError(getErrorMessage(err, 'Aplikasi client tidak valid atau belum terdaftar.'));
       } finally {
         setValidating(false);
       }
@@ -62,10 +64,13 @@ export default function OAuthAuthorizePage() {
         { client_id: clientId, redirect_uri: redirectUri, state, scope, nonce },
         { login: values.login.trim(), password: values.password }
       );
-      window.location.href = result.redirect_url;
-    } catch (err: any) {
-      const message = err?.response?.data?.detail || 'Login gagal. Periksa kembali NIP/username dan kata sandi Anda.';
-      setError(message);
+      if (result.password_is_default) {
+        setPendingRedirect(result.redirect_url);
+      } else {
+        window.location.href = result.redirect_url;
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, 'Login gagal. Periksa kembali NIP/username dan kata sandi Anda.'));
     } finally {
       setLoading(false);
     }
@@ -136,24 +141,53 @@ export default function OAuthAuthorizePage() {
                 <Alert message="Gagal" description={error} type="error" showIcon closable onClose={() => setError(null)} className="mb-5 rounded-xl" />
               )}
 
-              <Form form={form} layout="vertical" onFinish={handleSubmit} size="large" requiredMark={false}>
-                <Form.Item name="login" label={<span className="text-xs font-semibold text-slate-700 uppercase">NIP / Username</span>} rules={[{ required: true, message: 'Wajib diisi' }]}>
-                  <Input prefix={<UserOutlined className="text-slate-400" />} placeholder="NIP 18 digit atau username" autoComplete="username" className="text-sm" />
-                </Form.Item>
-
-                <Form.Item name="password" label={<span className="text-xs font-semibold text-slate-700 uppercase">Kata Sandi</span>} rules={[{ required: true, message: 'Wajib diisi' }]}>
-                  <Input.Password prefix={<LockOutlined className="text-slate-400" />} placeholder="Kata sandi akun" autoComplete="current-password" className="text-sm" />
-                </Form.Item>
-
-                <div className="flex gap-3 mt-6">
-                  <Button onClick={handleCancel} className="h-11 rounded-full flex-1" icon={<CloseOutlined />}>
-                    Tolak
+              {pendingRedirect ? (
+                <div>
+                  <Alert
+                    type="warning"
+                    showIcon
+                    className="mb-5 rounded-xl"
+                    message="Anda masih menggunakan kata sandi bawaan"
+                    description="Kata sandi bawaan mudah ditebak oleh orang yang mengetahui NIP Anda. Anda dapat menggantinya melalui Portal SSO, menu Profil → Ganti Kata Sandi."
+                  />
+                  <Button
+                    autoFocus
+                    type="primary"
+                    className="btn-material-primary h-11 rounded-full w-full"
+                    icon={<ArrowRightOutlined />}
+                    onClick={() => { window.location.href = pendingRedirect; }}
+                  >
+                    Lanjutkan ke aplikasi
                   </Button>
-                  <Button htmlType="submit" loading={loading} className="btn-material-primary h-11 rounded-full flex-[2]" icon={<ArrowRightOutlined />}>
-                    Izinkan & Masuk
-                  </Button>
+                  <div className="text-center mt-4">
+                    <a
+                      className="text-xs text-emerald-800 font-semibold"
+                      onClick={() => window.open(ROUTES.LOGIN, '_blank', 'noopener')}
+                    >
+                      Buka Portal SSO
+                    </a>
+                  </div>
                 </div>
-              </Form>
+              ) : (
+                <Form form={form} layout="vertical" onFinish={handleSubmit} size="large" requiredMark={false}>
+                  <Form.Item name="login" label={<span className="text-xs font-semibold text-slate-700 uppercase">NIP / Username</span>} rules={[{ required: true, message: 'Wajib diisi' }]}>
+                    <Input prefix={<UserOutlined className="text-slate-400" />} placeholder="NIP 18 digit atau username" autoComplete="username" className="text-sm" />
+                  </Form.Item>
+
+                  <Form.Item name="password" label={<span className="text-xs font-semibold text-slate-700 uppercase">Kata Sandi</span>} rules={[{ required: true, message: 'Wajib diisi' }]}>
+                    <Input.Password prefix={<LockOutlined className="text-slate-400" />} placeholder="Kata sandi akun" autoComplete="current-password" className="text-sm" />
+                  </Form.Item>
+
+                  <div className="flex gap-3 mt-6">
+                    <Button onClick={handleCancel} className="h-11 rounded-full flex-1" icon={<CloseOutlined />}>
+                      Tolak
+                    </Button>
+                    <Button htmlType="submit" loading={loading} className="btn-material-primary h-11 rounded-full flex-[2]" icon={<ArrowRightOutlined />}>
+                      Izinkan & Masuk
+                    </Button>
+                  </div>
+                </Form>
+              )}
 
               <div className="text-center text-[11px] text-slate-400 mt-6">
                 Pengadilan Agama Ngawi &bull; Mahkamah Agung RI

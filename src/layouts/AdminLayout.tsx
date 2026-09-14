@@ -7,27 +7,36 @@ import {
   Dropdown,
   Drawer,
   Button,
+  Alert,
 } from 'antd';
 import {
   AppstoreOutlined,
   TeamOutlined,
   ApartmentOutlined,
   SafetyOutlined,
-  SwapOutlined,
   UserOutlined,
   LogoutOutlined,
   MenuOutlined,
   SafetyCertificateOutlined,
   DashboardOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import { useAuth, useLogoutMutation } from '../hooks/useAuth';
 import { ROUTES } from '../config/routes';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import type { MenuProps } from 'antd';
 
 const { Header, Content, Footer } = Layout;
 
 export default function AdminLayout() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [reminderDismissed, setReminderDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem('password-reminder-dismissed') === '1';
+    } catch {
+      return false;
+    }
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAdmin } = useAuth();
@@ -68,6 +77,12 @@ export default function AdminLayout() {
       icon: <UserOutlined />,
       label: 'Profil Saya',
       onClick: () => navigate(ROUTES.PROFILE),
+    },
+    {
+      key: 'change-password',
+      icon: <KeyOutlined />,
+      label: 'Ganti Kata Sandi',
+      onClick: () => navigate(ROUTES.CHANGE_PASSWORD),
     },
     { type: 'divider' },
     {
@@ -111,12 +126,7 @@ export default function AdminLayout() {
               {
                 key: ROUTES.ADMIN_ROLE_MAPPINGS,
                 icon: <SafetyOutlined />,
-                label: 'Role Mapping Jabatan',
-              },
-              {
-                key: ROUTES.ADMIN_ROLE_OVERRIDES,
-                icon: <SwapOutlined />,
-                label: 'Role Override Pegawai',
+                label: 'Pemetaan Role Jabatan',
               },
             ],
           },
@@ -134,7 +144,6 @@ export default function AdminLayout() {
       ROUTES.ADMIN_JABATAN,
       ROUTES.ADMIN_CLIENTS,
       ROUTES.ADMIN_ROLE_MAPPINGS,
-      ROUTES.ADMIN_ROLE_OVERRIDES,
     ];
     for (const r of adminRoutes) {
       if (location.pathname.startsWith(r)) return r;
@@ -224,7 +233,7 @@ export default function AdminLayout() {
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
             <div className="flex items-center gap-3 cursor-pointer hover:bg-slate-100/80 rounded-2xl px-3 py-1.5 transition-colors border border-transparent hover:border-slate-200 select-none">
               <Avatar
-                src={user?.avatar ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${user.avatar}` : undefined}
+                src={resolveAssetUrl(user?.avatar)}
                 className="bg-emerald-800 text-amber-300 shadow-sm shrink-0"
                 size={38}
               >
@@ -282,6 +291,29 @@ export default function AdminLayout() {
       {/* MAIN CONTENT AREA (Full-Width Clean Container)             */}
       {/* ========================================================= */}
       <Content className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {user?.password_is_default && !reminderDismissed && location.pathname !== ROUTES.CHANGE_PASSWORD && (
+          <Alert
+            type="warning"
+            showIcon
+            closable
+            className="mb-6"
+            message="Anda masih menggunakan kata sandi bawaan"
+            description="Demi keamanan akun, sebaiknya ganti kata sandi Anda."
+            action={
+              <Button size="small" type="primary" onClick={() => navigate(ROUTES.CHANGE_PASSWORD)}>
+                Ganti Kata Sandi
+              </Button>
+            }
+            onClose={() => {
+              try {
+                sessionStorage.setItem('password-reminder-dismissed', '1');
+              } catch {
+                // ignore
+              }
+              setReminderDismissed(true);
+            }}
+          />
+        )}
         <Outlet />
       </Content>
 

@@ -1,5 +1,5 @@
 import api from '../config/api';
-import type { TokenResponse, OAuthAuthorizeResponse, OAuthAuthorizeSubmitResponse } from '../types/auth';
+import type { ChangePasswordRequest, TokenResponse, OAuthAuthorizeResponse, OAuthAuthorizeSubmitResponse } from '../types/auth';
 
 export const authService = {
   login: async (login: string, password: string): Promise<TokenResponse> => {
@@ -18,6 +18,11 @@ export const authService = {
 
   getMe: async () => {
     const response = await api.get('/api/v1/auth/me');
+    return response.data;
+  },
+
+  changePassword: async (data: ChangePasswordRequest): Promise<{ message: string }> => {
+    const response = await api.put<{ message: string }>('/api/v1/auth/me/password', data);
     return response.data;
   },
 

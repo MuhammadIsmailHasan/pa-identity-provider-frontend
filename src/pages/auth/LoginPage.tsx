@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useLoginMutation } from '../../hooks/useAuth';
 import { ROUTES } from '../../config/routes';
+import { getErrorMessage } from '../../utils/apiError';
 
 export default function LoginPage() {
   const [form] = Form.useForm();
@@ -25,17 +26,16 @@ export default function LoginPage() {
         password: values.password,
       });
       navigate(ROUTES.DASHBOARD, { replace: true });
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Login gagal. Periksa kembali NIP/username dan password Anda.';
-      setError(msg);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Login gagal. Periksa kembali NIP/username dan password Anda.'));
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between p-4 sm:p-6 lg:p-10 relative">
+    <div className="min-h-screen w-full flex flex-col justify-between p-2 sm:p-4 lg:p-6 relative">
       {/* Top Bar / Clean Material Header */}
-      <div className="w-full max-w-5xl mx-auto flex items-center justify-between py-2">
-        <div className="flex items-center gap-3">
+      <div className="w-full max-w-5xl mx-auto flex items-center justify-between py-1">
+        <div className="flex items-center gap-2">
           {/* Logo Pengadilan Agama Ngawi */}
           <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-white shadow-sm shrink-0">
             {/* Scales / Judicial Emblem */}
@@ -60,14 +60,14 @@ export default function LoginPage() {
       </div>
 
       {/* Center Container: Clean Material Login Box */}
-      <div className="w-full max-w-md mx-auto my-auto py-8">
-        <div className="material-card p-8 sm:p-10 bg-white">
+      <div className="w-full max-w-md mx-auto my-auto py-3">
+        <div className="material-card p-5 sm:p-7 bg-white">
           {/* Header Inside Card */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 mb-3 border border-emerald-100">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 mb-2 border border-emerald-100">
               <SafetyCertificateFilled className="text-2xl" />
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-0">
               Masuk ke Akun
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm">
@@ -84,7 +84,7 @@ export default function LoginPage() {
               showIcon
               closable
               onClose={() => setError(null)}
-              className="mb-6 rounded-xl border-red-200 bg-red-50 text-xs text-red-700"
+              className="mb-3 rounded-xl border-red-200 bg-red-50 text-xs text-red-700"
             />
           )}
 
@@ -108,7 +108,8 @@ export default function LoginPage() {
                 { required: true, message: 'Masukkan NIP 18 digit atau username' },
                 { min: 3, message: 'Minimal 3 karakter' },
               ]}
-              className="mb-4"
+              className="mb-2"
+              style={{ marginBottom: '8px' }}
             >
               <Input
                 prefix={<UserOutlined className="text-slate-400 mr-2" />}
@@ -128,7 +129,8 @@ export default function LoginPage() {
                 </span>
               }
               rules={[{ required: true, message: 'Masukkan kata sandi akun Anda' }]}
-              className="mb-4"
+              className="mb-2"
+              style={{ marginBottom: '8px' }}
             >
               <Input.Password
                 prefix={<LockOutlined className="text-slate-400 mr-2" />}
@@ -173,8 +175,8 @@ export default function LoginPage() {
       </div>
 
       {/* Clean Material Footer */}
-      <div className="w-full max-w-5xl mx-auto py-4 text-center text-xs text-slate-500 border-t border-slate-200/60">
-        <p className="mb-1 font-medium text-slate-600">
+      <div className="w-full max-w-5xl mx-auto py-2 text-center text-xs text-slate-500 border-t border-slate-200/60">
+        <p className="mb-0 font-medium text-slate-600">
           &copy; {new Date().getFullYear()} Pengadilan Agama Ngawi &bull; Mahkamah Agung Republik Indonesia
         </p>
         <p className="text-[11px] text-slate-400">

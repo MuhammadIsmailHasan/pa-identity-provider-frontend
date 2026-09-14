@@ -1,12 +1,47 @@
-import { useState } from 'react';
-import { Card, Tree, Button, Modal, Form, Input, TreeSelect, Space, Typography, Descriptions, message, Spin, Empty, Flex } from 'antd';
+import { useEffect, useState } from 'react';
+import { Card, Tree, Button, Modal, Form, Space, Descriptions, Tag, message, Spin, Empty, Flex } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DragOutlined, ApartmentOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/common/PageHeader';
+import JabatanTreeSelect from '../../components/jabatan/JabatanTreeSelect';
+import JabatanFormFields from './jabatan/JabatanFormFields';
 import { useJabatanTree, useCreateJabatan, useUpdateJabatan, useMoveJabatan, useDeleteJabatan } from '../../hooks/useJabatan';
-import type { JabatanTreeNode } from '../../types/jabatan';
+import { TIPE_JABATAN_LABEL } from '../../config/labels';
+import { getErrorMessage } from '../../utils/apiError';
+import type { JabatanCreate, JabatanTreeNode, JabatanUpdate } from '../../types/jabatan';
 import type { DataNode } from 'antd/es/tree';
+import type { Key } from 'react';
 
-const { Text } = Typography;
+function findNode(nodes: JabatanTreeNode[], id: number): JabatanTreeNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function nodeTitle(node: JabatanTreeNode) {
+  return (
+    <span className={!node.is_active ? 'text-gray-400 line-through' : ''}>
+      {node.name}{' '}
+      {node.tipe && <Tag className="ml-1">{TIPE_JABATAN_LABEL[node.tipe]}</Tag>}
+      {node.is_pejabat && <Tag color="blue" className="ml-1">Pejabat</Tag>}
+      {node.allow_plt && <Tag color="purple" className="ml-1">Plt</Tag>}
+      {node.allow_plh && <Tag color="purple" className="ml-1">Plh</Tag>}
+      {!node.is_active && <Tag color="default" className="ml-1">Nonaktif</Tag>}
+    </span>
+  );
+}
+
+function toAntTreeData(nodes: JabatanTreeNode[]): DataNode[] {
+  return nodes.map((node) => ({
+    key: node.id,
+    title: nodeTitle(node),
+    children: node.children ? toAntTreeData(node.children) : [],
+  }));
+}
 
 export default function JabatanPage() {
   const { data: treeData, isLoading } = useJabatanTree();
@@ -25,76 +60,67 @@ export default function JabatanPage() {
 
   const tree = treeData || [];
 
-  const toAntTreeData = (nodes: JabatanTreeNode[]): DataNode[] => {
-    return nodes.map((node) => ({
-      key: node.id,
-      title: node.name,
-      children: node.children ? toAntTreeData(node.children) : [],
-    }));
-  };
-
-  const toSelectData = (nodes: JabatanTreeNode[], excludeId?: number): any[] => {
-    return nodes
-      .filter((n) => n.id !== excludeId)
-      .map((n) => ({
-        value: n.id,
-        title: n.name,
-        children: n.children ? toSelectData(n.children, excludeId) : [],
-      }));
-  };
-
-  const findNode = (nodes: JabatanTreeNode[], id: number): JabatanTreeNode | null => {
-    for (const node of nodes) {
-      if (node.id === id) return node;
-      if (node.children) {
-        const found = findNode(node.children, id);
-        if (found) return found;
-      }
+  useEffect(() => {
+    if (selectedNode) {
+      const fresh = findNode(tree, selectedNode.id);
+      if (fresh !== selectedNode) setSelectedNode(fresh);
     }
-    return null;
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tree]);
 
-  const handleSelect = (selectedKeys: any[]) => {
+  const handleSelect = (selectedKeys: Key[]) => {
     if (selectedKeys.length > 0) {
-      const node = findNode(tree, Number(selectedKeys[0]));
-      setSelectedNode(node);
+      setSelectedNode(findNode(tree, Number(selectedKeys[0])));
     } else {
       setSelectedNode(null);
     }
   };
 
-  const handleCreate = async (values: any) => {
+  const cleanNullable = <T extends object>(values: T, fields: (keyof T)[]): T => {
+    const result: Record<string, unknown> = { ...(values as Record<string, unknown>) };
+    for (const field of fields) {
+      if (result[field as string] === '' || result[field as string] === undefined) {
+        result[field as string] = null;
+      }
+    }
+    return result as T;
+  };
+
+  const handleCreate = async (values: JabatanCreate) => {
+    const data = { ...values };
+    if (!data.kode) delete data.kode;
     try {
-      await createMutation.mutateAsync(values);
+      await createMutation.mutateAsync(data);
       message.success('Jabatan berhasil ditambahkan');
       setCreateModalOpen(false);
       createForm.resetFields();
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || 'Gagal menambahkan jabatan');
+    } catch (err) {
+      message.error(getErrorMessage(err, 'Gagal menambahkan jabatan'));
     }
   };
 
-  const handleEdit = async (values: any) => {
+  const handleEdit = async (values: JabatanUpdate) => {
     if (!selectedNode) return;
+    const data = cleanNullable(values, ['description', 'kelompok', 'tipe']);
+    if (!data.kode) delete data.kode;
     try {
-      await updateMutation.mutateAsync({ id: selectedNode.id, data: values });
+      await updateMutation.mutateAsync({ id: selectedNode.id, data });
       message.success('Jabatan berhasil diperbarui');
       setEditModalOpen(false);
-      setSelectedNode({ ...selectedNode, ...values });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || 'Gagal memperbarui jabatan');
+    } catch (err) {
+      message.error(getErrorMessage(err, 'Gagal memperbarui jabatan'));
     }
   };
 
-  const handleMove = async (values: any) => {
+  const handleMove = async (values: { new_parent_id?: number }) => {
     if (!selectedNode) return;
     try {
       await moveMutation.mutateAsync({ id: selectedNode.id, data: { new_parent_id: values.new_parent_id || null } });
       message.success('Jabatan berhasil dipindahkan');
       setMoveModalOpen(false);
       moveForm.resetFields();
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || 'Gagal memindahkan jabatan');
+    } catch (err) {
+      message.error(getErrorMessage(err, 'Gagal memindahkan jabatan'));
     }
   };
 
@@ -102,7 +128,7 @@ export default function JabatanPage() {
     if (!selectedNode) return;
     Modal.confirm({
       title: 'Hapus Jabatan',
-      content: `Yakin ingin menghapus "${selectedNode.name}"? Jika jabatan memiliki bawahan, jabatan bawahan akan dipindahkan ke induknya.`,
+      content: `Yakin ingin menghapus "${selectedNode.name}"? Jabatan bawahan akan dipindahkan ke induknya. Jabatan yang pernah memiliki penugasan tidak dapat dihapus; nonaktifkan jabatan tersebut.`,
       okText: 'Hapus',
       okType: 'danger',
       onOk: async () => {
@@ -110,8 +136,8 @@ export default function JabatanPage() {
           await deleteMutation.mutateAsync(selectedNode.id);
           message.success('Jabatan berhasil dihapus');
           setSelectedNode(null);
-        } catch (err: any) {
-          message.error(err?.response?.data?.detail || 'Gagal menghapus jabatan');
+        } catch (err) {
+          message.error(getErrorMessage(err, 'Gagal menghapus jabatan'));
         }
       },
     });
@@ -170,14 +196,20 @@ export default function JabatanPage() {
             }
           >
             {selectedNode ? (
-              <div>
-                <Descriptions column={1} bordered size="small">
-                  <Descriptions.Item label="Nama Jabatan">{selectedNode.name}</Descriptions.Item>
-                  <Descriptions.Item label="Deskripsi">{selectedNode.description || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="Level Hirarki">{selectedNode.level}</Descriptions.Item>
-                  <Descriptions.Item label="Jumlah Bawahan">{selectedNode.children?.length || 0}</Descriptions.Item>
-                </Descriptions>
-              </div>
+              <Descriptions column={1} bordered size="small">
+                <Descriptions.Item label="Nama">{selectedNode.name}</Descriptions.Item>
+                <Descriptions.Item label="Kode"><span className="font-mono">{selectedNode.kode}</span></Descriptions.Item>
+                <Descriptions.Item label="Deskripsi">{selectedNode.description || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Kelompok">{selectedNode.kelompok || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Tipe">{selectedNode.tipe ? TIPE_JABATAN_LABEL[selectedNode.tipe] : '-'}</Descriptions.Item>
+                <Descriptions.Item label="Pejabat">{selectedNode.is_pejabat ? 'Ya' : 'Tidak'}</Descriptions.Item>
+                <Descriptions.Item label="Izinkan Plt">{selectedNode.allow_plt ? 'Ya' : 'Tidak'}</Descriptions.Item>
+                <Descriptions.Item label="Izinkan Plh">{selectedNode.allow_plh ? 'Ya' : 'Tidak'}</Descriptions.Item>
+                <Descriptions.Item label="Urutan">{selectedNode.urutan}</Descriptions.Item>
+                <Descriptions.Item label="Status">{selectedNode.is_active ? 'Aktif' : 'Nonaktif'}</Descriptions.Item>
+                <Descriptions.Item label="Level">{selectedNode.level}</Descriptions.Item>
+                <Descriptions.Item label="Jumlah Bawahan Langsung">{selectedNode.children?.length || 0}</Descriptions.Item>
+              </Descriptions>
             ) : (
               <div className="text-center py-12 text-gray-400">
                 Pilih salah satu jabatan di pohon hirarki untuk melihat detail
@@ -196,15 +228,7 @@ export default function JabatanPage() {
         destroyOnClose
       >
         <Form form={createForm} layout="vertical" onFinish={handleCreate} className="mt-4">
-          <Form.Item name="name" label="Nama Jabatan" rules={[{ required: true, message: 'Wajib diisi' }]}>
-            <Input placeholder="cth. Kepala Bagian Kepegawaian" />
-          </Form.Item>
-          <Form.Item name="description" label="Deskripsi">
-            <Input placeholder="Deskripsi jabatan..." />
-          </Form.Item>
-          <Form.Item name="parent_id" label="Jabatan Induk (Atasan Langsung)">
-            <TreeSelect treeData={toSelectData(tree)} placeholder="Pilih atasan (kosongkan jika posisi puncak)" allowClear treeDefaultExpandAll />
-          </Form.Item>
+          <JabatanFormFields form={createForm} mode="create" tree={tree} />
           <Flex justify="flex-end" gap={8} className="mt-6">
             <Button onClick={() => setCreateModalOpen(false)}>Batal</Button>
             <Button type="primary" htmlType="submit" loading={createMutation.isPending}>Simpan</Button>
@@ -221,12 +245,7 @@ export default function JabatanPage() {
         destroyOnClose
       >
         <Form form={editForm} layout="vertical" onFinish={handleEdit} className="mt-4">
-          <Form.Item name="name" label="Nama Jabatan" rules={[{ required: true, message: 'Wajib diisi' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="Deskripsi">
-            <Input />
-          </Form.Item>
+          <JabatanFormFields form={editForm} mode="edit" />
           <Flex justify="flex-end" gap={8} className="mt-6">
             <Button onClick={() => setEditModalOpen(false)}>Batal</Button>
             <Button type="primary" htmlType="submit" loading={updateMutation.isPending}>Simpan</Button>
@@ -244,14 +263,13 @@ export default function JabatanPage() {
       >
         <Form form={moveForm} layout="vertical" onFinish={handleMove} className="mt-4">
           <div className="mb-4">
-            <Text>Pindahkan <Text strong>{selectedNode?.name}</Text> ke bawah atasan baru:</Text>
+            Pindahkan <strong>{selectedNode?.name}</strong> ke bawah atasan baru:
           </div>
           <Form.Item name="new_parent_id" label="Atasan Baru">
-            <TreeSelect
-              treeData={toSelectData(tree, selectedNode?.id)}
+            <JabatanTreeSelect
+              tree={tree}
+              excludeId={selectedNode?.id}
               placeholder="Pilih atasan baru (kosongkan jika puncak)"
-              allowClear
-              treeDefaultExpandAll
             />
           </Form.Item>
           <Flex justify="flex-end" gap={8} className="mt-6">

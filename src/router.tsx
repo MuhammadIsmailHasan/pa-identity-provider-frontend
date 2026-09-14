@@ -15,6 +15,7 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const OAuthAuthorizePage = lazy(() => import('./pages/auth/OAuthAuthorizePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
 const AppListPage = lazy(() => import('./pages/AppListPage'));
 const EmployeeListPage = lazy(() => import('./pages/admin/employees/EmployeeListPage'));
 const EmployeeDetailPage = lazy(() => import('./pages/admin/employees/EmployeeDetailPage'));
@@ -22,7 +23,6 @@ const JabatanPage = lazy(() => import('./pages/admin/JabatanPage'));
 const ClientListPage = lazy(() => import('./pages/admin/clients/ClientListPage'));
 const ClientDetailPage = lazy(() => import('./pages/admin/clients/ClientDetailPage'));
 const RoleMappingPage = lazy(() => import('./pages/admin/RoleMappingPage'));
-const RoleOverridePage = lazy(() => import('./pages/admin/RoleOverridePage'));
 
 function LazyWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -67,6 +67,7 @@ export const router = createBrowserRouter([
         children: [
           { path: ROUTES.DASHBOARD, element: <LazyWrapper><DashboardPage /></LazyWrapper> },
           { path: ROUTES.PROFILE, element: <LazyWrapper><ProfilePage /></LazyWrapper> },
+          { path: ROUTES.CHANGE_PASSWORD, element: <LazyWrapper><ChangePasswordPage /></LazyWrapper> },
           { path: ROUTES.APPS, element: <LazyWrapper><AppListPage /></LazyWrapper> },
 
           // Admin routes
@@ -79,7 +80,6 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_CLIENTS, element: <LazyWrapper><ClientListPage /></LazyWrapper> },
               { path: ROUTES.ADMIN_CLIENT_DETAIL, element: <LazyWrapper><ClientDetailPage /></LazyWrapper> },
               { path: ROUTES.ADMIN_ROLE_MAPPINGS, element: <LazyWrapper><RoleMappingPage /></LazyWrapper> },
-              { path: ROUTES.ADMIN_ROLE_OVERRIDES, element: <LazyWrapper><RoleOverridePage /></LazyWrapper> },
             ],
           },
         ],

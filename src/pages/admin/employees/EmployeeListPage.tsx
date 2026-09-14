@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Input, Space, Tag, Avatar, Modal, Form, message, Select, Flex } from 'antd';
-import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Input, Space, Avatar, Modal, Form, message, Select, Flex } from 'antd';
+import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import PageHeader from '../../../components/common/PageHeader';
-import StatusBadge from '../../../components/common/StatusBadge';
-import { useEmployees, useCreateEmployee, useDeleteEmployee } from '../../../hooks/useEmployees';
+import EmploymentStatusTag from '../../../components/employee/EmploymentStatusTag';
+import AvailabilityTag from '../../../components/employee/AvailabilityTag';
+import JabatanSummary from '../../../components/employee/JabatanSummary';
+import StatusChangeModal from '../../../components/common/StatusChangeModal';
+import { useEmployees, useCreateEmployee } from '../../../hooks/useEmployees';
+import { useJabatanList } from '../../../hooks/useJabatan';
+import { TIPE_JABATAN_LABEL } from '../../../config/labels';
+import { getErrorMessage } from '../../../utils/apiError';
+import { resolveAssetUrl } from '../../../utils/assetUrl';
 import type { Employee, EmployeeCreate } from '../../../types/employee';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 
@@ -13,43 +20,53 @@ export default function EmployeeListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState('');
+  const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [statusModalEmployee, setStatusModalEmployee] = useState<Employee | null>(null);
   const [form] = Form.useForm();
 
-  const { data, isLoading } = useEmployees({ page, page_size: pageSize, search: search || undefined });
+  const { data, isLoading } = useEmployees({
+    page,
+    page_size: pageSize,
+    search: search || undefined,
+    is_active: isActiveFilter,
+  });
+  const { data: jabatanList } = useJabatanList();
   const createMutation = useCreateEmployee();
-  const deleteMutation = useDeleteEmployee();
 
   const employees = data?.items || [];
   const total = data?.total || 0;
 
+  const jabatanOrder = useMemo(
+    () => new Map((jabatanList || []).map((j, index) => [j.id, index])),
+    [jabatanList],
+  );
+  const primaryJabatanId = (e: Employee) => (e.jabatan.find((j) => j.is_primary) ?? e.jabatan[0])?.id;
+  const sortedEmployees = [...employees].sort((a, b) => {
+    if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+    const orderA = jabatanOrder.get(primaryJabatanId(a) ?? -1) ?? Number.MAX_SAFE_INTEGER;
+    const orderB = jabatanOrder.get(primaryJabatanId(b) ?? -1) ?? Number.MAX_SAFE_INTEGER;
+    return orderA - orderB;
+  });
+
   const handleCreate = async (values: EmployeeCreate) => {
+    const payload: EmployeeCreate = {
+      ...values,
+      nama_tanpa_gelar: values.nama_tanpa_gelar || undefined,
+      nip: values.nip || undefined,
+      username: values.username || undefined,
+      email: values.email || undefined,
+      nomor_hp: values.nomor_hp || undefined,
+    };
     try {
-      await createMutation.mutateAsync(values);
-      message.success('Pegawai berhasil ditambahkan');
+      const created = await createMutation.mutateAsync(payload);
+      message.success('Pegawai berhasil ditambahkan. Tetapkan jabatannya melalui halaman detail.');
       setCreateModalOpen(false);
       form.resetFields();
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || 'Gagal menambahkan pegawai');
+      navigate(`/admin/employees/${created.id}`);
+    } catch (err) {
+      message.error(getErrorMessage(err, 'Gagal menambahkan pegawai'));
     }
-  };
-
-  const handleDelete = (record: Employee) => {
-    Modal.confirm({
-      title: 'Hapus Pegawai',
-      content: `Yakin ingin menghapus pegawai "${record.name}" (${record.nip})? Tindakan ini tidak dapat dibatalkan.`,
-      okText: 'Hapus',
-      okType: 'danger',
-      cancelText: 'Batal',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync(record.id);
-          message.success('Pegawai berhasil dihapus');
-        } catch (err: any) {
-          message.error(err?.response?.data?.detail || 'Gagal menghapus pegawai');
-        }
-      },
-    });
   };
 
   const columns: ColumnsType<Employee> = [
@@ -59,7 +76,7 @@ export default function EmployeeListPage() {
       render: (_, record) => (
         <Space size="middle">
           <Avatar
-            src={record.avatar ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${record.avatar}` : undefined}
+            src={resolveAssetUrl(record.avatar)}
             icon={!record.avatar && <UserOutlined />}
             style={{ backgroundColor: '#1677ff' }}
           />
@@ -74,34 +91,39 @@ export default function EmployeeListPage() {
       title: 'NIP',
       dataIndex: 'nip',
       key: 'nip',
-      render: (nip: string) => <span className="font-mono text-sm">{nip}</span>,
+      render: (nip: string | null) => (nip ? <span className="font-mono text-sm">{nip}</span> : <span className="text-gray-300">-</span>),
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
-      render: (email: string) => email || <span className="text-gray-300">-</span>,
+      render: (email: string | null) => email || <span className="text-gray-300">-</span>,
     },
     {
-      title: 'Peran',
-      key: 'role',
-      render: (_, record) =>
-        record.is_admin ? (
-          <Tag color="red">Super Admin</Tag>
-        ) : (
-          <Tag color="blue">Pegawai</Tag>
-        ),
+      title: 'Jabatan',
+      key: 'jabatan',
+      render: (_, record) => <JabatanSummary jabatan={record.jabatan} />,
+    },
+    {
+      title: 'Jenis',
+      dataIndex: 'jenis_pegawai',
+      key: 'jenis_pegawai',
+      render: (jenis: Employee['jenis_pegawai']) => (jenis ? TIPE_JABATAN_LABEL[jenis] : <span className="text-gray-300">-</span>),
     },
     {
       title: 'Status',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      render: (active: boolean) => <StatusBadge active={active} />,
+      key: 'status',
+      render: (_, record) => (
+        <Space direction="vertical" size={4}>
+          <EmploymentStatusTag status={record.status_kepegawaian} />
+          <AvailabilityTag available={record.is_available} />
+        </Space>
+      ),
     },
     {
       title: 'Aksi',
       key: 'action',
-      width: 120,
+      width: 100,
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -112,10 +134,9 @@ export default function EmployeeListPage() {
           />
           <Button
             type="text"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-            title="Hapus"
+            icon={<UserSwitchOutlined />}
+            onClick={() => setStatusModalEmployee(record)}
+            title="Ubah Status"
           />
         </Space>
       ),
@@ -159,13 +180,26 @@ export default function EmployeeListPage() {
             allowClear
             id="employee-search-input"
           />
+          <Select
+            value={isActiveFilter}
+            onChange={(value) => {
+              setIsActiveFilter(value);
+              setPage(1);
+            }}
+            style={{ width: 180 }}
+            options={[
+              { label: 'Semua', value: undefined },
+              { label: 'Aktif', value: true },
+              { label: 'Nonaktif', value: false },
+            ]}
+          />
         </Flex>
       </Card>
 
       <Card className="border-0 shadow-sm">
         <Table
           columns={columns}
-          dataSource={employees}
+          dataSource={sortedEmployees}
           rowKey="id"
           loading={isLoading}
           pagination={{
@@ -194,23 +228,51 @@ export default function EmployeeListPage() {
           form={form}
           layout="vertical"
           onFinish={handleCreate}
-          initialValues={{ is_admin: false, is_active: true }}
+          initialValues={{ is_admin: false }}
           className="mt-4"
         >
-          <Form.Item name="name" label="Nama Lengkap" rules={[{ required: true, message: 'Wajib diisi' }]}>
+          <Form.Item name="name" label="Nama Lengkap (dengan gelar)" rules={[{ required: true, message: 'Wajib diisi' }]}>
+            <Input placeholder="cth. Ahmad Fauzi, S.H." />
+          </Form.Item>
+
+          <Form.Item name="nama_tanpa_gelar" label="Nama Tanpa Gelar">
             <Input placeholder="cth. Ahmad Fauzi" />
           </Form.Item>
 
-          <Form.Item name="nip" label="NIP" rules={[{ required: true, message: 'Wajib diisi' }, { pattern: /^\d{18}$/, message: 'NIP harus 18 digit angka' }]}>
+          <Form.Item
+            name="nip"
+            label="NIP"
+            rules={[{ pattern: /^\d{18}$/, message: 'NIP harus 18 digit angka' }]}
+            extra="Kosongkan untuk pegawai outsourcing"
+          >
             <Input placeholder="18 digit NIP" maxLength={18} />
           </Form.Item>
 
-          <Form.Item name="username" label="Username" rules={[{ required: true, message: 'Wajib diisi' }]}>
+          <Form.Item
+            name="username"
+            label="Username"
+            dependencies={['nip']}
+            extra="Jika kosong, NIP dipakai sebagai username"
+            rules={[
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!getFieldValue('nip') && !value) {
+                    return Promise.reject(new Error('Username wajib diisi untuk pegawai tanpa NIP'));
+                  }
+                  return Promise.resolve();
+                },
+              }),
+            ]}
+          >
             <Input placeholder="cth. ahmad.fauzi" />
           </Form.Item>
 
           <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Format email tidak valid' }]}>
             <Input placeholder="cth. ahmad@instansi.go.id" />
+          </Form.Item>
+
+          <Form.Item name="nomor_hp" label="Nomor HP">
+            <Input placeholder="cth. 081234567890" />
           </Form.Item>
 
           <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Wajib diisi' }, { min: 8, message: 'Minimal 8 karakter' }]}>
@@ -234,6 +296,12 @@ export default function EmployeeListPage() {
           </Flex>
         </Form>
       </Modal>
+
+      <StatusChangeModal
+        open={!!statusModalEmployee}
+        employee={statusModalEmployee}
+        onClose={() => setStatusModalEmployee(null)}
+      />
     </div>
   );
 }

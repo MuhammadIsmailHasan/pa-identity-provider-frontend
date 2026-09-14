@@ -6,6 +6,7 @@ export const ROUTES = {
   // User
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
+  CHANGE_PASSWORD: '/profile/password',
   APPS: '/apps',
 
   // Admin
@@ -15,5 +16,4 @@ export const ROUTES = {
   ADMIN_CLIENTS: '/admin/clients',
   ADMIN_CLIENT_DETAIL: '/admin/clients/:id',
   ADMIN_ROLE_MAPPINGS: '/admin/role-mappings',
-  ADMIN_ROLE_OVERRIDES: '/admin/role-overrides',
 } as const;

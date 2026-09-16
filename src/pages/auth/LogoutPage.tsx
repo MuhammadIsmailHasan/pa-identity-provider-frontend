@@ -10,47 +10,58 @@ export default function LogoutPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [isValid, setIsValid] = useState(false);
+  const [appName, setAppName] = useState<string | null>(null);
 
   const clientId = searchParams.get('client_id') || '';
   const postLogoutRedirectUri = searchParams.get('post_logout_redirect_uri') || '';
   const state = searchParams.get('state') || '';
 
+  const goToClient = () => {
+    const url = new URL(postLogoutRedirectUri);
+    if (state) {
+      url.searchParams.set('state', state);
+    }
+    window.location.replace(url.toString());
+  };
+
   useEffect(() => {
     const handleLogout = async () => {
-      try {
-        // Validate logout request if parameters provided
-        if (clientId && postLogoutRedirectUri) {
-          const result = await authService.validateLogout({
-            client_id: clientId,
-            post_logout_redirect_uri: postLogoutRedirectUri,
-            state,
-          });
+      let valid = false;
+      // Validate logout request if parameters provided
+      if (clientId && postLogoutRedirectUri) {
+        const result = await authService.validateLogout({
+          client_id: clientId,
+          post_logout_redirect_uri: postLogoutRedirectUri,
+          state,
+        });
 
-          if (result) {
-            setIsValid(true);
-          } else {
-            setIsValid(false);
-            setMessage('Tautan kembali ke aplikasi tidak valid');
-          }
+        if (result) {
+          valid = true;
+          setIsValid(true);
+          setAppName(result.app_name);
+        } else {
+          setMessage('Tautan kembali ke aplikasi tidak valid');
         }
+      }
 
-        // Logout from portal (revoke refresh token / revoke session)
-        if (localStorage.getItem('refresh_token')) {
-          try {
-            await authService.logout();
-          } catch (err) {
-            console.error('Logout error:', err);
-          }
+      // Logout from portal (revoke SSO session; back-channel notifies other apps)
+      if (localStorage.getItem('refresh_token')) {
+        try {
+          await authService.logout();
+        } catch (err) {
+          console.error('Logout error:', err);
         }
+      }
 
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-        setMessage('Gagal memvalidasi permintaan logout');
+      setLoading(false);
+      if (valid) {
+        // Give the "Anda telah keluar" message a beat on screen, then leave.
+        setTimeout(goToClient, 1200);
       }
     };
 
     handleLogout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, postLogoutRedirectUri, state]);
 
   if (loading) {
@@ -74,20 +85,10 @@ export default function LogoutPage() {
         {isValid && clientId && postLogoutRedirectUri ? (
           <div>
             <p className="text-slate-600 text-sm mb-4">
-              Mengalihkan ke aplikasi dalam beberapa detik...
+              Mengalihkan ke {appName || 'aplikasi'}…
             </p>
-            <Button
-              type="primary"
-              onClick={() => {
-                const url = new URL(postLogoutRedirectUri);
-                if (state) {
-                  url.searchParams.set('state', state);
-                }
-                window.location.replace(url.toString());
-              }}
-              className="w-full"
-            >
-              Kembali ke Aplikasi
+            <Button type="primary" onClick={goToClient} className="w-full">
+              Kembali ke {appName || 'Aplikasi'}
             </Button>
           </div>
         ) : (

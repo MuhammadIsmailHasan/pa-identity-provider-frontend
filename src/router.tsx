@@ -13,6 +13,7 @@ import { Spin } from 'antd';
 
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const OAuthAuthorizePage = lazy(() => import('./pages/auth/OAuthAuthorizePage'));
+const LogoutPage = lazy(() => import('./pages/auth/LogoutPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
@@ -50,11 +51,12 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // OAuth authorize (accessible without auth)
+  // OAuth authorize and logout (accessible without auth — they manage their own session state)
   {
     element: <AuthLayout />,
     children: [
       { path: ROUTES.OAUTH_AUTHORIZE, element: <LazyWrapper><OAuthAuthorizePage /></LazyWrapper> },
+      { path: ROUTES.LOGOUT, element: <LazyWrapper><LogoutPage /></LazyWrapper> },
     ],
   },
 

@@ -26,6 +26,14 @@ export const authService = {
     return response.data;
   },
 
+  // Like getMe, but for the authorize page: a 401 (no session, or a revoked
+  // one) must not trigger the global redirect-to-/login — the page needs to
+  // fall back to its own login form while keeping the OAuth query params.
+  meForAuthorize: async () => {
+    const response = await api.get('/api/v1/auth/me', { skipAuthRedirect: true });
+    return response.data;
+  },
+
   changePassword: async (data: ChangePasswordRequest): Promise<{ message: string }> => {
     const response = await api.put<{ message: string }>('/api/v1/auth/me/password', data);
     return response.data;

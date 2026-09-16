@@ -56,6 +56,19 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // Pages that need to stay put on a 401 (OAuth authorize, logout) opt out
+      // of the refresh-then-redirect dance entirely.
+      if (originalRequest.skipAuthRedirect) {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          return Promise.reject(error);
+        }
+        // Fall through to the normal refresh attempt below, but never redirect
+        // on failure — just clear tokens and let the caller decide what to show.
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -78,7 +91,9 @@ apiClient.interceptors.response.use(
       if (!refreshToken) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        if (!originalRequest.skipAuthRedirect) {
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
 
@@ -101,7 +116,9 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as AxiosError);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        if (!originalRequest.skipAuthRedirect) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

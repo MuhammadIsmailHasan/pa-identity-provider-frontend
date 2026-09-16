@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Form, Input, Button, Alert, Spin } from 'antd';
+import { App, Form, Input, Button, Alert, Spin, Avatar } from 'antd';
 import {
   UserOutlined,
   LockOutlined,
@@ -10,30 +10,42 @@ import {
   CloseOutlined,
 } from '@ant-design/icons';
 import { authService } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '../../config/routes';
 import { getErrorMessage } from '../../utils/apiError';
+import { resolveAssetUrl } from '../../utils/assetUrl';
+import type { User } from '../../types/auth';
+
+type ViewMode = 'validating' | 'lanjutkan' | 'form' | 'clientError';
 
 export default function OAuthAuthorizePage() {
+  const { modal } = App.useApp();
   const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [validating, setValidating] = useState(true);
+  const [view, setView] = useState<ViewMode>('validating');
   const [error, setError] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
   const [appInfo, setAppInfo] = useState<{ app_name?: string; client_id: string; scope: string } | null>(null);
+  const [account, setAccount] = useState<User | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
+  const validatedOnce = useRef(false);
 
   const clientId = searchParams.get('client_id') || '';
   const redirectUri = searchParams.get('redirect_uri') || '';
   const state = searchParams.get('state') || undefined;
   const scope = searchParams.get('scope') || 'openid profile email';
   const nonce = searchParams.get('nonce') || undefined;
+  const promptLogin = searchParams.get('prompt') === 'login';
 
   useEffect(() => {
+    if (validatedOnce.current) return;
+    validatedOnce.current = true;
+
     const validateClient = async () => {
       if (!clientId || !redirectUri) {
         setClientError('Parameter client_id dan redirect_uri diperlukan.');
-        setValidating(false);
+        setView('clientError');
         return;
       }
 
@@ -48,13 +60,72 @@ export default function OAuthAuthorizePage() {
         setAppInfo({ app_name: response.app_name, client_id: response.client_id, scope: response.scope });
       } catch (err) {
         setClientError(getErrorMessage(err, 'Aplikasi client tidak valid atau belum terdaftar.'));
-      } finally {
-        setValidating(false);
+        setView('clientError');
+        return;
       }
+
+      const hasToken = !!localStorage.getItem('access_token');
+      if (hasToken && !promptLogin) {
+        try {
+          const me = await authService.meForAuthorize();
+          setAccount(me);
+          setView('lanjutkan');
+          return;
+        } catch {
+          // Sesi portal tidak ada/berakhir — jatuh ke form login biasa.
+        }
+      }
+      setView('form');
     };
 
     validateClient();
-  }, [clientId, redirectUri, scope, state, nonce]);
+  }, [clientId, redirectUri, scope, state, nonce, promptLogin]);
+
+  const handleContinueAsSession = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await authService.oauthAuthorizeWithSession({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        state,
+        scope,
+        nonce,
+      });
+      if (result.password_is_default) {
+        setPendingRedirect(result.redirect_url);
+      } else {
+        window.location.href = result.redirect_url;
+      }
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        setAccount(null);
+        setView('form');
+        setError('Sesi SSO telah berakhir. Silakan masuk kembali.');
+      } else {
+        setError(getErrorMessage(err, 'Gagal melanjutkan ke aplikasi.'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUseAnotherAccount = () => {
+    modal.confirm({
+      title: 'Gunakan akun lain?',
+      content: 'Anda akan keluar dari Portal SSO dan dari aplikasi lain yang sedang memakai akun ini.',
+      okText: 'Keluar dan ganti akun',
+      okType: 'danger',
+      onOk: async () => {
+        await useAuthStore.getState().logout();
+        setAccount(null);
+        setView('form');
+      },
+    });
+  };
 
   const handleSubmit = async (values: { login: string; password: string }) => {
     setLoading(true);
@@ -89,6 +160,7 @@ export default function OAuthAuthorizePage() {
   };
 
   const scopesList = (appInfo?.scope || scope).split(' ').filter(Boolean);
+  const primaryJabatan = account?.jabatan?.find((j) => j.is_primary) || account?.jabatan?.[0];
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-material-subtle">
@@ -98,17 +170,23 @@ export default function OAuthAuthorizePage() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 text-amber-300 mb-2">
             <AppstoreOutlined className="text-xl" />
           </div>
-          <h2 className="text-lg font-bold text-white mb-0.5">Otorisasi Akses Single Sign On</h2>
+          <h2 className="text-lg font-bold text-white mb-0.5">
+            {view === 'lanjutkan' ? (
+              <>Masuk ke {appInfo?.app_name || clientId}</>
+            ) : (
+              'Otorisasi Akses Single Sign On'
+            )}
+          </h2>
           <p className="text-xs text-emerald-100">SSO Pengadilan Agama Ngawi</p>
         </div>
 
         <div className="p-6 sm:p-8">
-          {validating ? (
+          {view === 'validating' ? (
             <div className="text-center py-10">
               <Spin size="large" />
               <div className="text-slate-500 text-xs mt-3">Memvalidasi aplikasi client...</div>
             </div>
-          ) : clientError ? (
+          ) : view === 'clientError' ? (
             <div className="py-4">
               <Alert message="Aplikasi Tidak Diizinkan" description={clientError} type="error" showIcon className="rounded-xl" />
               <div className="mt-6 text-center">
@@ -117,24 +195,26 @@ export default function OAuthAuthorizePage() {
             </div>
           ) : (
             <div>
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
-                <div className="text-xs font-semibold text-slate-700 mb-0.5">Aplikasi Peminta:</div>
-                <div className="text-base font-bold text-emerald-800 break-words">{appInfo?.app_name || clientId}</div>
+              {view === 'form' && (
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
+                  <div className="text-xs font-semibold text-slate-700 mb-0.5">Aplikasi Peminta:</div>
+                  <div className="text-base font-bold text-emerald-800 break-words">{appInfo?.app_name || clientId}</div>
 
-                <div className="mt-3 pt-3 border-t border-slate-200">
-                  <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
-                    Izin Akses (Scope):
-                  </div>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {scopesList.map((s) => (
-                      <span key={s} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white border border-emerald-200 text-emerald-800 text-xs font-medium">
-                        <CheckCircleFilled className="text-emerald-600 text-xs" />
-                        {s}
-                      </span>
-                    ))}
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Izin Akses (Scope):
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {scopesList.map((s) => (
+                        <span key={s} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white border border-emerald-200 text-emerald-800 text-xs font-medium">
+                          <CheckCircleFilled className="text-emerald-600 text-xs" />
+                          {s}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {error && (
                 <Alert message="Gagal" description={error} type="error" showIcon closable onClose={() => setError(null)} className="mb-5 rounded-xl" />
@@ -165,6 +245,45 @@ export default function OAuthAuthorizePage() {
                     >
                       Buka Portal SSO
                     </a>
+                  </div>
+                </div>
+              ) : view === 'lanjutkan' && account ? (
+                <div>
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
+                    <Avatar
+                      size={48}
+                      src={account.avatar ? resolveAssetUrl(account.avatar) : undefined}
+                      icon={!account.avatar && <UserOutlined />}
+                    >
+                      {!account.avatar && account.name?.[0]}
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-slate-800 truncate">{account.name}</div>
+                      <div className="text-xs text-slate-500">{account.nip || account.username}</div>
+                      {primaryJabatan && (
+                        <div className="text-xs text-emerald-700 truncate">{primaryJabatan.name}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    autoFocus
+                    type="primary"
+                    loading={loading}
+                    className="btn-material-primary h-11 rounded-full w-full"
+                    icon={<ArrowRightOutlined />}
+                    onClick={handleContinueAsSession}
+                  >
+                    Lanjutkan sebagai {account.nama_tanpa_gelar || account.name}
+                  </Button>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <a className="text-xs text-slate-500 font-medium" onClick={handleUseAnotherAccount}>
+                      Gunakan akun lain
+                    </a>
+                    <Button size="small" onClick={handleCancel} icon={<CloseOutlined />}>
+                      Batalkan
+                    </Button>
                   </div>
                 </div>
               ) : (

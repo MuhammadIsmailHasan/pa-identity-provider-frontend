@@ -1,4 +1,4 @@
-import { Card, Form, Input, Button, Alert, message } from 'antd';
+import { App, Card, Form, Input, Button, Alert } from 'antd';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
@@ -9,6 +9,7 @@ import { ROUTES } from '../config/routes';
 import type { ChangePasswordRequest } from '../types/auth';
 
 export default function ChangePasswordPage() {
+  const { message: msg } = App.useApp();
   const { user, fetchMe } = useAuth();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -23,12 +24,12 @@ export default function ChangePasswordPage() {
         current_password: values.current_password,
         new_password: values.new_password,
       });
-      message.success(response.message);
+      msg.success(response.message);
       await fetchMe();
       form.resetFields();
       navigate(ROUTES.PROFILE);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal mengubah kata sandi'));
+      msg.error(getErrorMessage(err, 'Gagal mengubah kata sandi'));
     }
   };
 

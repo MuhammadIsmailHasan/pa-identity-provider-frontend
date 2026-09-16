@@ -37,6 +37,15 @@ export function useUpdateOAuthClient() {
   });
 }
 
+export function useSetOAuthClientActive() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      oauthClientService.setActive(id, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all }),
+  });
+}
+
 export function useDeleteOAuthClient() {
   const queryClient = useQueryClient();
   return useMutation({

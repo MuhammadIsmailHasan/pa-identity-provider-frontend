@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Card, Row, Col, Typography, Input, Button, Tag, Spin, Flex } from 'antd';
+import { Card, Row, Col, Input, Button, Spin } from 'antd';
 import {
   SearchOutlined,
   ExportOutlined,
@@ -7,17 +7,14 @@ import {
   ApartmentOutlined,
   SafetyOutlined,
   AppstoreOutlined,
-  CheckCircleFilled,
   GlobalOutlined,
   ThunderboltFilled,
-  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useOAuthClients } from '../hooks/useClients';
 import { useDashboardStats } from '../hooks/useDashboard';
 import type { OAuthClient } from '../types/oauth';
 
-const { Title, Text, Paragraph } = Typography;
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();

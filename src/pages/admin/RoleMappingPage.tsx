@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Table, Button, Modal, Form, Select, message } from 'antd';
+import { App, Card, Table, Button, Modal, Form, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/common/PageHeader';
 import JabatanTreeSelect from '../../components/jabatan/JabatanTreeSelect';
@@ -11,6 +11,7 @@ import type { RoleMapping } from '../../types/oauth';
 import type { ColumnsType } from 'antd/es/table';
 
 export default function RoleMappingPage() {
+  const { message: msg, modal } = App.useApp();
   const [filterClientId, setFilterClientId] = useState<number | undefined>();
   const { data: mappingsData, isLoading: mappingsLoading } = useRoleMappings(filterClientId);
   const { data: treeData, isLoading: treeLoading } = useJabatanTree();
@@ -32,16 +33,16 @@ export default function RoleMappingPage() {
   const handleCreate = async (values: { oauth_client_id: number; jabatan_id: number; client_role_id: number }) => {
     try {
       await createMutation.mutateAsync({ jabatan_id: values.jabatan_id, client_role_id: values.client_role_id });
-      message.success('Pemetaan role berhasil ditambahkan');
+      msg.success('Pemetaan role berhasil ditambahkan');
       setModalOpen(false);
       form.resetFields();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menambahkan pemetaan role'));
+      msg.error(getErrorMessage(err, 'Gagal menambahkan pemetaan role'));
     }
   };
 
   const handleDelete = (id: number) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Pemetaan Role',
       content: 'Yakin ingin menghapus pemetaan role ini?',
       okText: 'Hapus',
@@ -49,9 +50,9 @@ export default function RoleMappingPage() {
       onOk: async () => {
         try {
           await deleteMutation.mutateAsync(id);
-          message.success('Pemetaan role dihapus');
+          msg.success('Pemetaan role dihapus');
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus pemetaan role'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus pemetaan role'));
         }
       },
     });

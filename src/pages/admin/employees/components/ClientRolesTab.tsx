@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Card, Empty, Modal, Select, Space, Table, Tag, message } from 'antd';
+import { Alert, App, Button, Card, Empty, Modal, Select, Space, Table, Tag } from 'antd';
 import { Link } from 'react-router-dom';
 import { PlusOutlined } from '@ant-design/icons';
 import { useEmployeeClientRoles, useGrantClientRole, useRevokeClientRole } from '../../../../hooks/useEmployees';
@@ -12,6 +12,7 @@ interface ClientRolesTabProps {
 }
 
 export default function ClientRolesTab({ employee }: ClientRolesTabProps) {
+  const { message: msg, modal } = App.useApp();
   const { data: grants, isLoading } = useEmployeeClientRoles(employee.id);
   const { data: clients } = useOAuthClients();
   const grantMutation = useGrantClientRole();
@@ -28,17 +29,17 @@ export default function ClientRolesTab({ employee }: ClientRolesTabProps) {
     if (!selectedRoleId) return;
     try {
       await grantMutation.mutateAsync({ employeeId: employee.id, clientRoleId: selectedRoleId });
-      message.success('Role aplikasi berhasil ditambahkan');
+      msg.success('Role aplikasi berhasil ditambahkan');
       setAddModalOpen(false);
       setSelectedClientId(undefined);
       setSelectedRoleId(undefined);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menambahkan role aplikasi'));
+      msg.error(getErrorMessage(err, 'Gagal menambahkan role aplikasi'));
     }
   };
 
   const handleRevoke = (grantId: number) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Role Aplikasi',
       content: 'Yakin ingin menghapus role ini dari pegawai?',
       okText: 'Hapus',
@@ -46,9 +47,9 @@ export default function ClientRolesTab({ employee }: ClientRolesTabProps) {
       onOk: async () => {
         try {
           await revokeMutation.mutateAsync({ employeeId: employee.id, grantId });
-          message.success('Role aplikasi berhasil dihapus');
+          msg.success('Role aplikasi berhasil dihapus');
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus role aplikasi'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus role aplikasi'));
         }
       },
     });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Tree, Button, Modal, Form, Space, Descriptions, Tag, message, Spin, Empty, Flex } from 'antd';
+import { App, Card, Tree, Button, Modal, Form, Space, Descriptions, Tag, Spin, Empty, Flex } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DragOutlined, ApartmentOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/common/PageHeader';
 import JabatanTreeSelect from '../../components/jabatan/JabatanTreeSelect';
@@ -44,6 +44,7 @@ function toAntTreeData(nodes: JabatanTreeNode[]): DataNode[] {
 }
 
 export default function JabatanPage() {
+  const { message: msg, modal } = App.useApp();
   const { data: treeData, isLoading } = useJabatanTree();
   const createMutation = useCreateJabatan();
   const updateMutation = useUpdateJabatan();
@@ -91,11 +92,11 @@ export default function JabatanPage() {
     if (!data.kode) delete data.kode;
     try {
       await createMutation.mutateAsync(data);
-      message.success('Jabatan berhasil ditambahkan');
+      msg.success('Jabatan berhasil ditambahkan');
       setCreateModalOpen(false);
       createForm.resetFields();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menambahkan jabatan'));
+      msg.error(getErrorMessage(err, 'Gagal menambahkan jabatan'));
     }
   };
 
@@ -105,10 +106,10 @@ export default function JabatanPage() {
     if (!data.kode) delete data.kode;
     try {
       await updateMutation.mutateAsync({ id: selectedNode.id, data });
-      message.success('Jabatan berhasil diperbarui');
+      msg.success('Jabatan berhasil diperbarui');
       setEditModalOpen(false);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal memperbarui jabatan'));
+      msg.error(getErrorMessage(err, 'Gagal memperbarui jabatan'));
     }
   };
 
@@ -116,17 +117,17 @@ export default function JabatanPage() {
     if (!selectedNode) return;
     try {
       await moveMutation.mutateAsync({ id: selectedNode.id, data: { new_parent_id: values.new_parent_id || null } });
-      message.success('Jabatan berhasil dipindahkan');
+      msg.success('Jabatan berhasil dipindahkan');
       setMoveModalOpen(false);
       moveForm.resetFields();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal memindahkan jabatan'));
+      msg.error(getErrorMessage(err, 'Gagal memindahkan jabatan'));
     }
   };
 
   const handleDelete = () => {
     if (!selectedNode) return;
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Jabatan',
       content: `Yakin ingin menghapus "${selectedNode.name}"? Jabatan bawahan akan dipindahkan ke induknya. Jabatan yang pernah memiliki penugasan tidak dapat dihapus; nonaktifkan jabatan tersebut.`,
       okText: 'Hapus',
@@ -134,10 +135,10 @@ export default function JabatanPage() {
       onOk: async () => {
         try {
           await deleteMutation.mutateAsync(selectedNode.id);
-          message.success('Jabatan berhasil dihapus');
+          msg.success('Jabatan berhasil dihapus');
           setSelectedNode(null);
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus jabatan'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus jabatan'));
         }
       },
     });

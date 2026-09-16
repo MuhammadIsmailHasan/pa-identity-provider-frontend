@@ -1,5 +1,5 @@
 import { Card, Row, Col, Typography, Button, Spin } from 'antd';
-import { AppstoreOutlined, LinkOutlined } from '@ant-design/icons';
+import { LinkOutlined } from '@ant-design/icons';
 import PageHeader from '../components/common/PageHeader';
 import EmptyState from '../components/common/EmptyState';
 import { useOAuthClients } from '../hooks/useClients';

@@ -12,8 +12,13 @@ export const authService = {
     return response.data;
   },
 
-  logout: async (refreshToken: string): Promise<void> => {
-    await api.post('/api/v1/auth/logout', { refresh_token: refreshToken });
+  logout: async (refreshToken?: string): Promise<void> => {
+    const token = refreshToken || localStorage.getItem('refresh_token') || '';
+    if (token) {
+      await api.post('/api/v1/auth/logout', { refresh_token: token });
+    }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
   },
 
   getMe: async () => {
@@ -45,5 +50,34 @@ export const authService = {
   ): Promise<OAuthAuthorizeSubmitResponse> => {
     const response = await api.post<OAuthAuthorizeSubmitResponse>('/oauth/authorize', credentials, { params });
     return response.data;
+  },
+
+  // OAuth authorize with portal session
+  oauthAuthorizeWithSession: async (params: {
+    client_id: string;
+    redirect_uri: string;
+    state?: string;
+    scope?: string;
+    nonce?: string;
+  }): Promise<OAuthAuthorizeSubmitResponse> => {
+    const response = await api.post<OAuthAuthorizeSubmitResponse>('/oauth/authorize/session', {}, {
+      params,
+      skipAuthRedirect: true,
+    });
+    return response.data;
+  },
+
+  // Validate logout request
+  validateLogout: async (params: {
+    client_id: string;
+    post_logout_redirect_uri: string;
+    state?: string;
+  }): Promise<{ app_name: string; post_logout_redirect_uri: string; state?: string } | null> => {
+    try {
+      const response = await api.get('/oauth/logout', { params });
+      return response.data;
+    } catch (err) {
+      return null;
+    }
   },
 };

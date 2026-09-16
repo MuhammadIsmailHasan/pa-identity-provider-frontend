@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Input, Space, Avatar, Modal, Form, message, Select, Flex } from 'antd';
+import { App, Card, Table, Button, Input, Space, Avatar, Modal, Form, Select, Flex, Tag } from 'antd';
 import { PlusOutlined, SearchOutlined, UserOutlined, EyeOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import PageHeader from '../../../components/common/PageHeader';
 import EmploymentStatusTag from '../../../components/employee/EmploymentStatusTag';
@@ -16,6 +16,7 @@ import type { Employee, EmployeeCreate } from '../../../types/employee';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 
 export default function EmployeeListPage() {
+  const { message: msg } = App.useApp();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -60,12 +61,12 @@ export default function EmployeeListPage() {
     };
     try {
       const created = await createMutation.mutateAsync(payload);
-      message.success('Pegawai berhasil ditambahkan. Tetapkan jabatannya melalui halaman detail.');
+      msg.success('Pegawai berhasil ditambahkan. Tetapkan jabatannya melalui halaman detail.');
       setCreateModalOpen(false);
       form.resetFields();
       navigate(`/admin/employees/${created.id}`);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menambahkan pegawai'));
+      msg.error(getErrorMessage(err, 'Gagal menambahkan pegawai'));
     }
   };
 
@@ -117,6 +118,7 @@ export default function EmployeeListPage() {
         <Space direction="vertical" size={4}>
           <EmploymentStatusTag status={record.status_kepegawaian} />
           <AvailabilityTag available={record.is_available} />
+          {record.is_system_account && <Tag color="purple">Akun Sistem</Tag>}
         </Space>
       ),
     },

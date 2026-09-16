@@ -1,10 +1,36 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Modal, Form, Input, message, Typography, Space, Radio, Switch, Select, Tag } from 'antd';
-import { PlusOutlined, EyeOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
+import {
+  App,
+  Card,
+  Table,
+  Button,
+  Input,
+  Space,
+  Tag,
+  Modal,
+  Form,
+  Radio,
+  Switch,
+  Select,
+  Typography,
+} from 'antd';
+import {
+  PlusOutlined,
+  EyeOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
+  CopyOutlined,
+} from '@ant-design/icons';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusBadge from '../../../components/common/StatusBadge';
-import { useOAuthClients, useCreateOAuthClient, useDeleteOAuthClient } from '../../../hooks/useClients';
+import DeleteClientModal from './components/DeleteClientModal';
+import {
+  useOAuthClients,
+  useCreateOAuthClient,
+  useSetOAuthClientActive,
+} from '../../../hooks/useClients';
 import { ACCESS_POLICY_LABEL, CLIENT_SCOPE_OPTIONS } from '../../../config/labels';
 import { getErrorMessage } from '../../../utils/apiError';
 import type { OAuthClient, OAuthClientCreate, OAuthClientWithSecret } from '../../../types/oauth';
@@ -14,13 +40,15 @@ const { Text, Paragraph } = Typography;
 const ACCESS_POLICY_OPTIONS = Object.entries(ACCESS_POLICY_LABEL).map(([value, label]) => ({ value, label }));
 
 export default function ClientListPage() {
+  const { message: msg, modal } = App.useApp();
   const navigate = useNavigate();
   const { data: clientsData, isLoading } = useOAuthClients();
   const createMutation = useCreateOAuthClient();
-  const deleteMutation = useDeleteOAuthClient();
+  const setActiveMutation = useSetOAuthClientActive();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [secretModalData, setSecretModalData] = useState<OAuthClientWithSecret | null>(null);
+  const [deleteTargetClient, setDeleteTargetClient] = useState<OAuthClient | null>(null);
   const [form] = Form.useForm();
   const allowClientCredentials = Form.useWatch('allow_client_credentials', form);
 
@@ -38,25 +66,35 @@ export default function ClientListPage() {
       setCreateModalOpen(false);
       form.resetFields();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal mendaftarkan aplikasi'));
+      msg.error(getErrorMessage(err, 'Gagal mendaftarkan aplikasi'));
     }
   };
 
-  const handleDelete = (client: OAuthClient) => {
-    Modal.confirm({
-      title: 'Nonaktifkan Aplikasi Client',
-      content: `Yakin ingin menonaktifkan "${client.app_name}"? Pegawai tidak akan dapat login ke aplikasi ini.`,
-      okText: 'Nonaktifkan',
-      okType: 'danger',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync(client.id);
-          message.success('Aplikasi client berhasil dinonaktifkan');
-        } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menonaktifkan aplikasi client'));
-        }
-      },
-    });
+  const handleToggleActive = (client: OAuthClient) => {
+    if (client.is_active) {
+      modal.confirm({
+        title: 'Nonaktifkan Aplikasi Client',
+        content: `Pegawai tidak dapat login ke ${client.app_name} dan sinkronisasi aplikasi ini akan ditolak. Dapat diaktifkan kembali.`,
+        okText: 'Nonaktifkan',
+        okType: 'danger',
+        onOk: async () => {
+          try {
+            await setActiveMutation.mutateAsync({ id: client.id, isActive: false });
+            msg.success('Aplikasi client berhasil dinonaktifkan');
+          } catch (err) {
+            msg.error(getErrorMessage(err, 'Gagal menonaktifkan aplikasi client'));
+          }
+        },
+      });
+    } else {
+      setActiveMutation.mutateAsync({ id: client.id, isActive: true })
+        .then(() => {
+          msg.success('Aplikasi client berhasil diaktifkan');
+        })
+        .catch((err) => {
+          msg.error(getErrorMessage(err, 'Gagal mengaktifkan aplikasi client'));
+        });
+    }
   };
 
   const columns: ColumnsType<OAuthClient> = [
@@ -100,7 +138,7 @@ export default function ClientListPage() {
     {
       title: 'Aksi',
       key: 'action',
-      width: 120,
+      width: 140,
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -109,12 +147,27 @@ export default function ClientListPage() {
             onClick={() => navigate(`/admin/clients/${record.id}`)}
             title="Detail"
           />
+          {record.is_active ? (
+            <Button
+              type="text"
+              icon={<StopOutlined className="text-amber-600" />}
+              onClick={() => handleToggleActive(record)}
+              title="Nonaktifkan"
+            />
+          ) : (
+            <Button
+              type="text"
+              icon={<CheckCircleOutlined className="text-emerald-600" />}
+              onClick={() => handleToggleActive(record)}
+              title="Aktifkan"
+            />
+          )}
           <Button
             type="text"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-            title="Nonaktifkan"
+            onClick={() => setDeleteTargetClient(record)}
+            title="Hapus Permanen"
           />
         </Space>
       ),
@@ -215,6 +268,13 @@ export default function ClientListPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal Hapus Permanen */}
+      <DeleteClientModal
+        open={!!deleteTargetClient}
+        client={deleteTargetClient}
+        onClose={() => setDeleteTargetClient(null)}
+      />
     </div>
   );
 }

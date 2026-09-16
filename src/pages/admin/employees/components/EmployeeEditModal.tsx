@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Modal, Form, Input, Select, message } from 'antd';
+import { App, Modal, Form, Input, Select } from 'antd';
 import { useUpdateEmployee } from '../../../../hooks/useEmployees';
 import { getErrorMessage } from '../../../../utils/apiError';
 import type { Employee, EmployeeUpdate } from '../../../../types/employee';
@@ -13,6 +13,7 @@ interface EmployeeEditModalProps {
 const NULLABLE_FIELDS = ['nip', 'nama_tanpa_gelar', 'email', 'nomor_hp'] as const;
 
 export default function EmployeeEditModal({ open, employee, onClose }: EmployeeEditModalProps) {
+  const { message: msg } = App.useApp();
   const [form] = Form.useForm();
   const updateMutation = useUpdateEmployee();
 
@@ -44,10 +45,10 @@ export default function EmployeeEditModal({ open, employee, onClose }: EmployeeE
     }
     try {
       await updateMutation.mutateAsync({ id: employee.id, data });
-      message.success('Profil pegawai berhasil diperbarui');
+      msg.success('Profil pegawai berhasil diperbarui');
       onClose();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal memperbarui profil pegawai'));
+      msg.error(getErrorMessage(err, 'Gagal memperbarui profil pegawai'));
     }
   };
 

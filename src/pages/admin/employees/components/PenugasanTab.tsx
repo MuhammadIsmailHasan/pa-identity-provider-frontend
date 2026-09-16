@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Card, DatePicker, Form, Input, Modal, Radio, Space, Switch, Table, Tag, Typography, message } from 'antd';
+import { Alert, App, Button, Card, DatePicker, Form, Input, Modal, Radio, Space, Switch, Table, Tag, Typography } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import TipePenugasanTag from '../../../../components/employee/TipePenugasanTag';
 import JabatanTreeSelect from '../../../../components/jabatan/JabatanTreeSelect';
@@ -32,6 +32,7 @@ interface PenugasanTabProps {
 }
 
 export default function PenugasanTab({ employee }: PenugasanTabProps) {
+  const { message: msg, modal } = App.useApp();
   const { data: penugasanList, isLoading } = usePenugasan(employee.id);
   const { data: jabatanTree } = useJabatanTree();
   const createMutation = useCreatePenugasan();
@@ -65,7 +66,7 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
 
   const showWarnings = (warnings: string[]) => {
     if (warnings.length > 0) {
-      Modal.warning({
+      modal.warning({
         title: 'Penugasan tersimpan dengan catatan',
         content: (
           <ul className="list-disc pl-5">
@@ -91,12 +92,12 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
     };
     try {
       const result = await createMutation.mutateAsync({ employeeId: employee.id, data });
-      message.success(result.message);
+      msg.success(result.message);
       showWarnings(result.warnings);
       setAddModalOpen(false);
       form.resetFields();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menambahkan penugasan'));
+      msg.error(getErrorMessage(err, 'Gagal menambahkan penugasan'));
     }
   };
 
@@ -126,17 +127,17 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
           keterangan: values.keterangan || null,
         },
       });
-      message.success(result.message);
+      msg.success(result.message);
       showWarnings(result.warnings);
       setEditTarget(null);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal memperbarui penugasan'));
+      msg.error(getErrorMessage(err, 'Gagal memperbarui penugasan'));
     }
   };
 
   const handleEnd = (record: Penugasan) => {
     setEndDate(dayjs());
-    Modal.confirm({
+    modal.confirm({
       title: 'Akhiri Penugasan',
       content: (
         <div className="mt-2">
@@ -157,17 +158,17 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
             penugasanId: record.id,
             data: { end_date: toApiDate(endDate) },
           });
-          message.success(result.message);
+          msg.success(result.message);
           showWarnings(result.warnings);
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal mengakhiri penugasan'));
+          msg.error(getErrorMessage(err, 'Gagal mengakhiri penugasan'));
         }
       },
     });
   };
 
   const handleDelete = (record: Penugasan) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Penugasan',
       content:
         'Hapus hanya untuk penugasan yang salah input. Untuk penugasan yang benar-benar terjadi, gunakan "Akhiri" agar riwayat tetap tersimpan.',
@@ -176,9 +177,9 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
       onOk: async () => {
         try {
           await deleteMutation.mutateAsync({ employeeId: employee.id, penugasanId: record.id });
-          message.success('Penugasan berhasil dihapus');
+          msg.success('Penugasan berhasil dihapus');
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus penugasan'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus penugasan'));
         }
       },
     });

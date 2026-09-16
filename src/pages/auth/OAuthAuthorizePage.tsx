@@ -4,14 +4,14 @@ import { Form, Input, Button, Alert, Spin } from 'antd';
 import {
   UserOutlined,
   LockOutlined,
+  ArrowRightOutlined,
   AppstoreOutlined,
   CheckCircleFilled,
-  ArrowRightOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
 import { authService } from '../../services/authService';
-import { getErrorMessage } from '../../utils/apiError';
 import { ROUTES } from '../../config/routes';
+import { getErrorMessage } from '../../utils/apiError';
 
 export default function OAuthAuthorizePage() {
   const [searchParams] = useSearchParams();
@@ -20,7 +20,7 @@ export default function OAuthAuthorizePage() {
   const [validating, setValidating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
-  const [appInfo, setAppInfo] = useState<{ client_id: string; scope: string } | null>(null);
+  const [appInfo, setAppInfo] = useState<{ app_name?: string; client_id: string; scope: string } | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
   const clientId = searchParams.get('client_id') || '';
@@ -45,7 +45,7 @@ export default function OAuthAuthorizePage() {
           state,
           nonce,
         });
-        setAppInfo({ client_id: response.client_id, scope: response.scope });
+        setAppInfo({ app_name: response.app_name, client_id: response.client_id, scope: response.scope });
       } catch (err) {
         setClientError(getErrorMessage(err, 'Aplikasi client tidak valid atau belum terdaftar.'));
       } finally {
@@ -80,7 +80,7 @@ export default function OAuthAuthorizePage() {
     if (redirectUri) {
       const url = new URL(redirectUri);
       url.searchParams.set('error', 'access_denied');
-      url.searchParams.set('error_description', 'Pengguna membatalkan otorisasi');
+      url.searchParams.set('error_description', 'Pengguna membatalkan login');
       if (state) url.searchParams.set('state', state);
       window.location.href = url.toString();
     } else {
@@ -119,8 +119,7 @@ export default function OAuthAuthorizePage() {
             <div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
                 <div className="text-xs font-semibold text-slate-700 mb-0.5">Aplikasi Peminta:</div>
-                <div className="font-mono text-sm font-bold text-emerald-800 break-all">{clientId}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Callback: {redirectUri}</div>
+                <div className="text-base font-bold text-emerald-800 break-words">{appInfo?.app_name || clientId}</div>
 
                 <div className="mt-3 pt-3 border-t border-slate-200">
                   <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
@@ -180,10 +179,10 @@ export default function OAuthAuthorizePage() {
 
                   <div className="flex gap-3 mt-6">
                     <Button onClick={handleCancel} className="h-11 rounded-full flex-1" icon={<CloseOutlined />}>
-                      Tolak
+                      Batalkan
                     </Button>
                     <Button htmlType="submit" loading={loading} className="btn-material-primary h-11 rounded-full flex-[2]" icon={<ArrowRightOutlined />}>
-                      Izinkan & Masuk
+                      Masuk
                     </Button>
                   </div>
                 </Form>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Card, DatePicker, Form, Input, Modal, Space, Switch, Table, Tag, Tooltip, message } from 'antd';
+import { Alert, App, Button, Card, DatePicker, Form, Input, Modal, Space, Switch, Table, Tag, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import {
   useCreateUnavailability,
@@ -22,6 +22,7 @@ interface UnavailabilityTabProps {
 }
 
 export default function UnavailabilityTab({ employee }: UnavailabilityTabProps) {
+  const { message: msg, modal } = App.useApp();
   const [includePast, setIncludePast] = useState(false);
   const { data: records, isLoading } = useUnavailability(employee.id, includePast);
   const { data: clients } = useOAuthClients();
@@ -54,23 +55,23 @@ export default function UnavailabilityTab({ employee }: UnavailabilityTabProps) 
           employeeId: employee.id,
           data: { start_date: start.format('YYYY-MM-DD'), end_date: end.format('YYYY-MM-DD'), keterangan: values.keterangan || undefined },
         });
-        message.success('Data ketidaktersediaan berhasil ditambahkan');
+        msg.success('Data ketidaktersediaan berhasil ditambahkan');
       } else if (modalTarget) {
         await updateMutation.mutateAsync({
           employeeId: employee.id,
           recordId: modalTarget.id,
           data: { start_date: start.format('YYYY-MM-DD'), end_date: end.format('YYYY-MM-DD'), keterangan: values.keterangan || null },
         });
-        message.success('Data ketidaktersediaan berhasil diperbarui');
+        msg.success('Data ketidaktersediaan berhasil diperbarui');
       }
       setModalTarget(null);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menyimpan data ketidaktersediaan'));
+      msg.error(getErrorMessage(err, 'Gagal menyimpan data ketidaktersediaan'));
     }
   };
 
   const handleDelete = (record: Unavailability) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Ketidaktersediaan',
       content: 'Yakin ingin menghapus data ketidaktersediaan ini?',
       okText: 'Hapus',
@@ -78,9 +79,9 @@ export default function UnavailabilityTab({ employee }: UnavailabilityTabProps) 
       onOk: async () => {
         try {
           await deleteMutation.mutateAsync({ employeeId: employee.id, recordId: record.id });
-          message.success('Data ketidaktersediaan berhasil dihapus');
+          msg.success('Data ketidaktersediaan berhasil dihapus');
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus data ketidaktersediaan'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus data ketidaktersediaan'));
         }
       },
     });

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Modal, Form, Select, DatePicker, Alert, message } from 'antd';
+import { App, Modal, Form, Select, DatePicker, Alert } from 'antd';
 import dayjs from 'dayjs';
 import { useChangeEmployeeStatus } from '../../hooks/useEmployees';
 import { STATUS_KEPEGAWAIAN_LABEL } from '../../config/labels';
@@ -17,6 +17,7 @@ interface StatusChangeModalProps {
 const STATUS_OPTIONS = Object.entries(STATUS_KEPEGAWAIAN_LABEL).map(([value, label]) => ({ value, label }));
 
 export default function StatusChangeModal({ open, employee, onClose }: StatusChangeModalProps) {
+  const { message: msg } = App.useApp();
   const [form] = Form.useForm();
   const changeStatus = useChangeEmployeeStatus();
   const selectedStatus: StatusKepegawaian | undefined = Form.useWatch('status_kepegawaian', form);
@@ -40,10 +41,10 @@ export default function StatusChangeModal({ open, employee, onClose }: StatusCha
     };
     try {
       await changeStatus.mutateAsync({ id: employee.id, data });
-      message.success('Status pegawai berhasil diperbarui');
+      msg.success('Status pegawai berhasil diperbarui');
       onClose();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal memperbarui status pegawai'));
+      msg.error(getErrorMessage(err, 'Gagal memperbarui status pegawai'));
     }
   };
 

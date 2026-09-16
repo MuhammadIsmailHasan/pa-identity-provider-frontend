@@ -30,6 +30,11 @@ export const oauthClientService = {
     return response.data;
   },
 
+  setActive: async (id: number, isActive: boolean): Promise<OAuthClient> => {
+    const response = await api.put<OAuthClient>(`/api/v1/oauth-clients/${id}`, { is_active: isActive });
+    return response.data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/v1/oauth-clients/${id}`);
   },

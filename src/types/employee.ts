@@ -29,6 +29,7 @@ export interface Employee {
   is_active: boolean;
   is_admin: boolean;
   is_available: boolean;
+  is_system_account: boolean;
   jenis_pegawai: TipeJabatan | null;
   created_at: string;
   updated_at: string;

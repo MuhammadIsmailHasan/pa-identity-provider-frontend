@@ -55,6 +55,7 @@ export interface OAuthAuthorizeParams {
 
 export interface OAuthAuthorizeResponse {
   message: string;
+  app_name?: string;
   client_id: string;
   redirect_uri: string;
   response_type: string;

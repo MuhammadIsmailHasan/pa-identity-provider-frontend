@@ -1,6 +1,7 @@
 export const ROUTES = {
   // Auth
   LOGIN: '/login',
+  LOGOUT: '/logout',
   OAUTH_AUTHORIZE: '/oauth/authorize',
 
   // User

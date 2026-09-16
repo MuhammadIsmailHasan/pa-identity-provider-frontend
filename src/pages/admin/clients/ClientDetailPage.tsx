@@ -1,147 +1,205 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, Button, Card, Descriptions, Empty, Form, Input, Modal, Radio, Select, Space, Spin, Switch, Table, Tabs, Tag, message } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  App,
+  Card,
+  Descriptions,
+  Tag,
+  Button,
+  Tabs,
+  Table,
+  Space,
+  Modal,
+  Form,
+  Input,
+  Radio,
+  Switch,
+  Select,
+  Alert,
+  Empty,
+} from 'antd';
+import {
+  EditOutlined,
+  PlusOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusBadge from '../../../components/common/StatusBadge';
 import JabatanTreeSelect from '../../../components/jabatan/JabatanTreeSelect';
+import DeleteClientModal from './components/DeleteClientModal';
 import {
+  useOAuthClient,
+  useUpdateOAuthClient,
+  useSetOAuthClientActive,
   useClientRoles,
   useCreateClientRole,
-  useDeleteClientRole,
-  useOAuthClient,
   useUpdateClientRole,
-  useUpdateOAuthClient,
+  useDeleteClientRole,
 } from '../../../hooks/useClients';
-import { useCreateRoleMapping, useDeleteRoleMapping, useRoleMappings } from '../../../hooks/useRoles';
 import { useJabatanTree } from '../../../hooks/useJabatan';
+import { useRoleMappings, useCreateRoleMapping, useDeleteRoleMapping } from '../../../hooks/useRoles';
 import { ACCESS_POLICY_LABEL, CLIENT_SCOPE_OPTIONS } from '../../../config/labels';
 import { getErrorMessage } from '../../../utils/apiError';
-import type { ClientRole, ClientRoleCreate, OAuthClientUpdate } from '../../../types/oauth';
+import type {
+  ClientRole,
+  ClientRoleCreate,
+  ClientRoleUpdate,
+  OAuthClientUpdate,
+} from '../../../types/oauth';
 
 const ACCESS_POLICY_OPTIONS = Object.entries(ACCESS_POLICY_LABEL).map(([value, label]) => ({ value, label }));
 
 export default function ClientDetailPage() {
+  const { message: msg, modal } = App.useApp();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const clientId = Number(id);
-  const { data: client, isLoading } = useOAuthClient(clientId);
-  const updateClientMutation = useUpdateOAuthClient();
+  const navigate = useNavigate();
 
+  const { data: client, isLoading: clientLoading } = useOAuthClient(clientId);
   const { data: roles } = useClientRoles(clientId);
+  const { data: mappings } = useRoleMappings(clientId);
+  const { data: jabatanTree } = useJabatanTree();
+
+  const updateClientMutation = useUpdateOAuthClient();
+  const setActiveMutation = useSetOAuthClientActive();
   const createRoleMutation = useCreateClientRole();
   const updateRoleMutation = useUpdateClientRole();
   const deleteRoleMutation = useDeleteClientRole();
-
-  const { data: mappings } = useRoleMappings(clientId);
-  const { data: jabatanTree } = useJabatanTree();
   const createMappingMutation = useCreateRoleMapping();
   const deleteMappingMutation = useDeleteRoleMapping();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [settingsForm] = Form.useForm();
-  const settingsAllowCC = Form.useWatch('allow_client_credentials', settingsForm);
-
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [roleModalTarget, setRoleModalTarget] = useState<ClientRole | 'new' | null>(null);
-  const [roleForm] = Form.useForm();
-
   const [mappingModalOpen, setMappingModalOpen] = useState(false);
+
+  const [settingsForm] = Form.useForm();
+  const [roleForm] = Form.useForm();
   const [mappingForm] = Form.useForm();
 
-  useEffect(() => {
-    if (settingsModalOpen && client) {
-      settingsForm.setFieldsValue({
-        app_name: client.app_name,
-        redirect_uri: client.redirect_uri,
-        allowed_origins: client.allowed_origins,
-        access_policy: client.access_policy,
-        allow_client_credentials: client.allow_client_credentials,
-        scopes: client.allowed_scopes ? client.allowed_scopes.split(' ') : [],
-        is_active: client.is_active,
-      });
-    }
-  }, [settingsModalOpen, client, settingsForm]);
+  const settingsAllowCC = Form.useWatch('allow_client_credentials', settingsForm);
 
-  if (isLoading) return <div className="flex justify-center py-20"><Spin size="large" /></div>;
-  if (!client) return null;
+  if (clientLoading) return <Card loading />;
+  if (!client) return <Alert message="Aplikasi client tidak ditemukan" type="error" />;
+
+  const openSettingsModal = () => {
+    settingsForm.setFieldsValue({
+      app_name: client.app_name,
+      redirect_uri: client.redirect_uri,
+      allowed_origins: client.allowed_origins,
+      access_policy: client.access_policy,
+      allow_client_credentials: client.allow_client_credentials,
+      scopes: client.allowed_scopes ? client.allowed_scopes.split(' ') : [],
+      is_active: client.is_active,
+    });
+    setSettingsModalOpen(true);
+  };
 
   const handleUpdateSettings = async () => {
-    const values = await settingsForm.validateFields();
-    const { scopes, ...rest } = values;
-    const data: OAuthClientUpdate = {
-      ...rest,
-      allowed_origins: rest.allowed_origins || null,
-      allowed_scopes: scopes && scopes.length > 0 ? scopes.join(' ') : null,
-    };
     try {
-      await updateClientMutation.mutateAsync({ id: clientId, data });
-      message.success('Pengaturan aplikasi berhasil diperbarui');
+      const values = await settingsForm.validateFields();
+      const { scopes, ...rest } = values;
+      const payload: OAuthClientUpdate = {
+        ...rest,
+        allowed_scopes: scopes && scopes.length > 0 ? scopes.join(' ') : null,
+      };
+      await updateClientMutation.mutateAsync({ id: clientId, data: payload });
+      msg.success('Pengaturan aplikasi berhasil diperbarui');
       setSettingsModalOpen(false);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal memperbarui pengaturan aplikasi'));
+      msg.error(getErrorMessage(err, 'Gagal memperbarui pengaturan aplikasi'));
+    }
+  };
+
+  const handleToggleActive = () => {
+    if (client.is_active) {
+      modal.confirm({
+        title: 'Nonaktifkan Aplikasi Client',
+        content: `Pegawai tidak dapat login ke ${client.app_name} dan sinkronisasi aplikasi ini akan ditolak. Dapat diaktifkan kembali.`,
+        okText: 'Nonaktifkan',
+        okType: 'danger',
+        onOk: async () => {
+          try {
+            await setActiveMutation.mutateAsync({ id: client.id, isActive: false });
+            msg.success('Aplikasi client berhasil dinonaktifkan');
+          } catch (err) {
+            msg.error(getErrorMessage(err, 'Gagal menonaktifkan aplikasi client'));
+          }
+        },
+      });
+    } else {
+      setActiveMutation.mutateAsync({ id: client.id, isActive: true })
+        .then(() => {
+          msg.success('Aplikasi client berhasil diaktifkan');
+        })
+        .catch((err) => {
+          msg.error(getErrorMessage(err, 'Gagal mengaktifkan aplikasi client'));
+        });
     }
   };
 
   const openRoleModal = (target: ClientRole | 'new') => {
+    setRoleModalTarget(target);
     if (target === 'new') {
       roleForm.resetFields();
     } else {
       roleForm.setFieldsValue(target);
     }
-    setRoleModalTarget(target);
   };
 
   const handleRoleSubmit = async () => {
-    const values = await roleForm.validateFields();
     try {
+      const values = await roleForm.validateFields();
       if (roleModalTarget === 'new') {
         await createRoleMutation.mutateAsync({ clientId, data: values as ClientRoleCreate });
-        message.success('Role aplikasi berhasil ditambahkan');
+        msg.success('Role aplikasi berhasil ditambahkan');
       } else if (roleModalTarget) {
         await updateRoleMutation.mutateAsync({
           clientId,
           roleId: roleModalTarget.id,
-          data: { ...values, label: values.label || null, description: values.description || null },
+          data: values as ClientRoleUpdate,
         });
-        message.success('Role aplikasi berhasil diperbarui');
+        msg.success('Role aplikasi berhasil diperbarui');
       }
       setRoleModalTarget(null);
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menyimpan role aplikasi'));
+      msg.error(getErrorMessage(err, 'Gagal menyimpan role aplikasi'));
     }
   };
 
   const handleDeleteRole = (role: ClientRole) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Role Aplikasi',
-      content: 'Menghapus role juga menghapus pemetaan jabatan dan role pegawai yang memakai role ini.',
+      content: `Yakin ingin menghapus role "${role.name}"? Pemetaan jabatan dan role pegawai yang merujuk role ini ikut dihapus.`,
       okText: 'Hapus',
       okType: 'danger',
       onOk: async () => {
         try {
           await deleteRoleMutation.mutateAsync({ clientId, roleId: role.id });
-          message.success('Role aplikasi berhasil dihapus');
+          msg.success('Role aplikasi berhasil dihapus');
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus role aplikasi'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus role aplikasi'));
         }
       },
     });
   };
 
   const handleAddMapping = async () => {
-    const values = await mappingForm.validateFields();
     try {
-      await createMappingMutation.mutateAsync({ jabatan_id: values.jabatan_id, client_role_id: values.client_role_id });
-      message.success('Pemetaan jabatan berhasil ditambahkan');
+      const values = await mappingForm.validateFields();
+      await createMappingMutation.mutateAsync(values);
+      msg.success('Pemetaan jabatan berhasil ditambahkan');
       setMappingModalOpen(false);
       mappingForm.resetFields();
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal menambahkan pemetaan jabatan'));
+      msg.error(getErrorMessage(err, 'Gagal menambahkan pemetaan jabatan'));
     }
   };
 
   const handleDeleteMapping = (mappingId: number) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Pemetaan Jabatan',
       content: 'Yakin ingin menghapus pemetaan ini?',
       okText: 'Hapus',
@@ -149,9 +207,9 @@ export default function ClientDetailPage() {
       onOk: async () => {
         try {
           await deleteMappingMutation.mutateAsync(mappingId);
-          message.success('Pemetaan jabatan berhasil dihapus');
+          msg.success('Pemetaan jabatan berhasil dihapus');
         } catch (err) {
-          message.error(getErrorMessage(err, 'Gagal menghapus pemetaan jabatan'));
+          msg.error(getErrorMessage(err, 'Gagal menghapus pemetaan jabatan'));
         }
       },
     });
@@ -161,23 +219,48 @@ export default function ClientDetailPage() {
     <div>
       <PageHeader
         title={client.app_name}
-        breadcrumbs={[{ title: 'Dashboard', path: '/dashboard' }, { title: 'Aplikasi Client', path: '/admin/clients' }, { title: client.app_name }]}
+        subtitle={`Client ID: ${client.client_id}`}
+        breadcrumbs={[
+          { title: 'Dashboard', path: '/dashboard' },
+          { title: 'Aplikasi Client', path: '/admin/clients' },
+          { title: client.app_name },
+        ]}
         extra={
-          <>
-            <Button icon={<EditOutlined />} onClick={() => setSettingsModalOpen(true)}>Ubah Pengaturan</Button>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/admin/clients')}>Kembali</Button>
-          </>
+          <Space>
+            <Button icon={<EditOutlined />} onClick={openSettingsModal}>
+              Ubah Pengaturan
+            </Button>
+            {client.is_active ? (
+              <Button icon={<StopOutlined />} onClick={handleToggleActive}>
+                Nonaktifkan
+              </Button>
+            ) : (
+              <Button icon={<CheckCircleOutlined />} type="primary" onClick={handleToggleActive}>
+                Aktifkan
+              </Button>
+            )}
+            <Button danger icon={<DeleteOutlined />} onClick={() => setDeleteModalOpen(true)}>
+              Hapus Permanen
+            </Button>
+          </Space>
         }
       />
 
       <Card className="border-0 shadow-sm mb-6">
-        <Descriptions column={{ xs: 1, sm: 2 }} bordered size="middle">
-          <Descriptions.Item label="Nama Aplikasi">{client.app_name}</Descriptions.Item>
-          <Descriptions.Item label="Client ID"><code className="bg-gray-100 px-2 py-0.5 rounded">{client.client_id}</code></Descriptions.Item>
-          <Descriptions.Item label="Redirect URI" span={2}><code className="bg-gray-100 px-2 py-0.5 rounded">{client.redirect_uri}</code></Descriptions.Item>
-          <Descriptions.Item label="Allowed Origins" span={2}>{client.allowed_origins || '-'}</Descriptions.Item>
+        <Descriptions bordered column={{ xs: 1, sm: 2, md: 3 }} size="small">
+          <Descriptions.Item label="Client ID" span={2}>
+            <span className="font-mono text-xs select-all">{client.client_id}</span>
+          </Descriptions.Item>
           <Descriptions.Item label="Kebijakan Akses">
-            <Tag color={client.access_policy === 'all_active' ? 'green' : 'orange'}>{ACCESS_POLICY_LABEL[client.access_policy]}</Tag>
+            <Tag color={client.access_policy === 'all_active' ? 'green' : 'orange'}>
+              {ACCESS_POLICY_LABEL[client.access_policy]}
+            </Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="Redirect URI" span={2}>
+            <span className="font-mono text-xs">{client.redirect_uri}</span>
+          </Descriptions.Item>
+          <Descriptions.Item label="Allowed Origins">
+            <span className="font-mono text-xs">{client.allowed_origins || '-'}</span>
           </Descriptions.Item>
           <Descriptions.Item label="Sinkronisasi">{client.allow_client_credentials ? 'Ya' : 'Tidak'}</Descriptions.Item>
           <Descriptions.Item label="Scope" span={2}>
@@ -369,6 +452,14 @@ export default function ClientDetailPage() {
           </Form>
         )}
       </Modal>
+
+      {/* Modal Hapus Permanen */}
+      <DeleteClientModal
+        open={deleteModalOpen}
+        client={client}
+        onClose={() => setDeleteModalOpen(false)}
+        onSuccess={() => navigate('/admin/clients')}
+      />
     </div>
   );
 }

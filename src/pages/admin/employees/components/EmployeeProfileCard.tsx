@@ -29,6 +29,7 @@ export default function EmployeeProfileCard({ employee }: EmployeeProfileCardPro
             <EmploymentStatusTag status={employee.status_kepegawaian} />
             <AvailabilityTag available={employee.is_available} />
             {employee.is_admin && <Tag color="red">Super Admin</Tag>}
+            {employee.is_system_account && <Tag color="purple">Akun Sistem</Tag>}
           </div>
         </div>
       </div>

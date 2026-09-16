@@ -1,4 +1,4 @@
-import { Card, Descriptions, Avatar, Typography, Tag, message, Upload, Flex, Table, Button } from 'antd';
+import { App, Card, Descriptions, Avatar, Typography, Tag, Upload, Flex, Table, Button } from 'antd';
 import { UserOutlined, CameraOutlined, MailOutlined, IdcardOutlined, KeyOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
@@ -17,6 +17,7 @@ import type { UploadProps } from 'antd';
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
+  const { message: msg } = App.useApp();
   const { user, fetchMe } = useAuth();
   const uploadAvatarMutation = useUploadAvatar();
   const navigate = useNavigate();
@@ -37,10 +38,10 @@ export default function ProfilePage() {
     try {
       await uploadAvatarMutation.mutateAsync({ employeeId: user.id, file: file as File });
       await fetchMe();
-      message.success('Avatar berhasil diperbarui');
+      msg.success('Avatar berhasil diperbarui');
       onSuccess?.('ok');
     } catch (err) {
-      message.error(getErrorMessage(err, 'Gagal mengunggah avatar'));
+      msg.error(getErrorMessage(err, 'Gagal mengunggah avatar'));
       onError?.(err as Error);
     }
   };

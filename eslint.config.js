@@ -21,6 +21,13 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name=/^(Modal|message|notification)$/][property.name=/^(confirm|info|success|error|warning|warn|loading|open|destroy)$/]",
+          message: 'Gunakan App.useApp() (method statis antd tidak berfungsi di React 19).',
+        },
+      ],
     },
   },
 );

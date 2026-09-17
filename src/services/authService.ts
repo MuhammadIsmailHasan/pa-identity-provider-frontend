@@ -51,15 +51,6 @@ export const authService = {
     return response.data;
   },
 
-  // OAuth authorize - submit credentials
-  oauthAuthorizeSubmit: async (
-    params: { client_id: string; redirect_uri: string; state?: string; scope?: string; nonce?: string },
-    credentials: { login: string; password: string }
-  ): Promise<OAuthAuthorizeSubmitResponse> => {
-    const response = await api.post<OAuthAuthorizeSubmitResponse>('/oauth/authorize', credentials, { params });
-    return response.data;
-  },
-
   // OAuth authorize with portal session
   oauthAuthorizeWithSession: async (params: {
     client_id: string;

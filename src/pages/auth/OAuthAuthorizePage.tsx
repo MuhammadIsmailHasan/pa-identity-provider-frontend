@@ -81,9 +81,8 @@ export default function OAuthAuthorizePage() {
     validateClient();
   }, [clientId, redirectUri, scope, state, nonce, promptLogin]);
 
-  const handleContinueAsSession = async () => {
-    setLoading(true);
-    setError(null);
+  // Kembalikan true jika sudah mengalihkan atau menampilkan pengingat password
+  const authorizeWithPortalSession = async (): Promise<boolean> => {
     try {
       const result = await authService.oauthAuthorizeWithSession({
         client_id: clientId,
@@ -97,6 +96,7 @@ export default function OAuthAuthorizePage() {
       } else {
         window.location.href = result.redirect_url;
       }
+      return true;
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
@@ -108,6 +108,15 @@ export default function OAuthAuthorizePage() {
       } else {
         setError(getErrorMessage(err, 'Gagal melanjutkan ke aplikasi.'));
       }
+      return false;
+    }
+  };
+
+  const handleContinueAsSession = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await authorizeWithPortalSession();
     } finally {
       setLoading(false);
     }
@@ -131,17 +140,36 @@ export default function OAuthAuthorizePage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await authService.oauthAuthorizeSubmit(
-        { client_id: clientId, redirect_uri: redirectUri, state, scope, nonce },
-        { login: values.login.trim(), password: values.password }
-      );
-      if (result.password_is_default) {
-        setPendingRedirect(result.redirect_url);
-      } else {
-        window.location.href = result.redirect_url;
+      let tokens;
+      try {
+        tokens = await authService.login(values.login.trim(), values.password);
+      } catch (err) {
+        setError(getErrorMessage(err, 'Login gagal. Periksa kembali NIP/username dan kata sandi Anda.'));
+        return;
       }
-    } catch (err) {
-      setError(getErrorMessage(err, 'Login gagal. Periksa kembali NIP/username dan kata sandi Anda.'));
+
+      // prompt=login: cabut sesi portal lama sebelum menyimpan sesi baru
+      const oldRefreshToken = localStorage.getItem('refresh_token');
+      if (oldRefreshToken) {
+        try {
+          await authService.logout(oldRefreshToken);
+        } catch {
+          // Sesi lama mungkin sudah berakhir; lanjutkan dengan sesi baru
+        }
+      }
+
+      localStorage.setItem('access_token', tokens.access_token);
+      localStorage.setItem('refresh_token', tokens.refresh_token);
+
+      const ok = await authorizeWithPortalSession();
+      if (!ok && localStorage.getItem('access_token')) {
+        try {
+          setAccount(await authService.meForAuthorize());
+          setView('lanjutkan');
+        } catch {
+          // Tetap di form; pesan error sudah ditampilkan
+        }
+      }
     } finally {
       setLoading(false);
     }

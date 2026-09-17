@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ROUTES } from './config/routes';
 
 import AuthLayout from './layouts/AuthLayout';
@@ -89,6 +89,9 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Catch-all redirect
-  { path: '*', element: <LazyWrapper><LoginPage /></LazyWrapper> },
+  // Root and catch-all: forward to /login so GuestGuard decides (already-logged-in →
+  // dashboard, otherwise the login form). Never render LoginPage directly here — that
+  // would skip the guard's auth check entirely.
+  { path: '/', element: <Navigate to={ROUTES.LOGIN} replace /> },
+  { path: '*', element: <Navigate to={ROUTES.LOGIN} replace /> },
 ]);

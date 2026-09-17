@@ -9,7 +9,9 @@ export default function GuestGuard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Spin size="large" tip="Memuat..." />
+        <Spin size="large" tip="Memuat...">
+          <div className="p-12" />
+        </Spin>
       </div>
     );
   }

@@ -75,6 +75,7 @@ export default function ClientRolesTab({ employee }: ClientRolesTabProps) {
         rowKey="id"
         loading={isLoading}
         pagination={false}
+        scroll={{ x: 'max-content' }}
         columns={[
           { title: 'Aplikasi', dataIndex: 'app_name', key: 'app_name' },
           { title: 'Role', dataIndex: 'role_name', key: 'role_name', render: (v: string) => <Tag color="purple">{v}</Tag> },
@@ -101,7 +102,7 @@ export default function ClientRolesTab({ employee }: ClientRolesTabProps) {
         onOk={handleAdd}
         confirmLoading={grantMutation.isPending}
         okButtonProps={{ disabled: !selectedRoleId }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Space direction="vertical" className="w-full mt-4">
           <div>

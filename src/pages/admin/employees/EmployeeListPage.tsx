@@ -204,6 +204,7 @@ export default function EmployeeListPage() {
           dataSource={sortedEmployees}
           rowKey="id"
           loading={isLoading}
+          scroll={{ x: 'max-content' }}
           pagination={{
             current: page,
             pageSize,
@@ -224,7 +225,7 @@ export default function EmployeeListPage() {
           form.resetFields();
         }}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}

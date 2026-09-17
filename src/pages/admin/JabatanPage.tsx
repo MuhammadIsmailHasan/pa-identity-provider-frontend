@@ -226,7 +226,7 @@ export default function JabatanPage() {
         open={createModalOpen}
         onCancel={() => { setCreateModalOpen(false); createForm.resetFields(); }}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={createForm} layout="vertical" onFinish={handleCreate} className="mt-4">
           <JabatanFormFields form={createForm} mode="create" tree={tree} />
@@ -243,7 +243,7 @@ export default function JabatanPage() {
         open={editModalOpen}
         onCancel={() => setEditModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={editForm} layout="vertical" onFinish={handleEdit} className="mt-4">
           <JabatanFormFields form={editForm} mode="edit" />
@@ -260,7 +260,7 @@ export default function JabatanPage() {
         open={moveModalOpen}
         onCancel={() => setMoveModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={moveForm} layout="vertical" onFinish={handleMove} className="mt-4">
           <div className="mb-4">

@@ -111,7 +111,13 @@ export default function RoleMappingPage() {
       </Card>
 
       <Card className="border-0 shadow-sm">
-        <Table columns={columns} dataSource={mappings} rowKey="id" loading={loading} />
+        <Table
+          columns={columns}
+          dataSource={mappings}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+        />
       </Card>
 
       <Modal
@@ -119,7 +125,7 @@ export default function RoleMappingPage() {
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleCreate} className="mt-4">
           <Form.Item name="oauth_client_id" label="Aplikasi" rules={[{ required: true, message: 'Wajib dipilih' }]}>

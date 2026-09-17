@@ -297,6 +297,7 @@ export default function ClientDetailPage() {
                   dataSource={roles || []}
                   rowKey="id"
                   pagination={false}
+                  scroll={{ x: 'max-content' }}
                   columns={[
                     { title: 'Nama', dataIndex: 'name', key: 'name', render: (v: string) => <span className="font-mono">{v}</span> },
                     { title: 'Label', dataIndex: 'label', key: 'label', render: (v: string | null) => v || '-' },
@@ -339,6 +340,7 @@ export default function ClientDetailPage() {
                   dataSource={mappings || []}
                   rowKey="id"
                   pagination={false}
+                  scroll={{ x: 'max-content' }}
                   columns={[
                     {
                       title: 'Jabatan',
@@ -373,7 +375,7 @@ export default function ClientDetailPage() {
         onCancel={() => setSettingsModalOpen(false)}
         onOk={handleUpdateSettings}
         confirmLoading={updateClientMutation.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={settingsForm} layout="vertical" className="mt-4">
           <Form.Item name="app_name" label="Nama Aplikasi" rules={[{ required: true, message: 'Wajib diisi' }]}>
@@ -409,7 +411,7 @@ export default function ClientDetailPage() {
         onCancel={() => setRoleModalTarget(null)}
         onOk={handleRoleSubmit}
         confirmLoading={createRoleMutation.isPending || updateRoleMutation.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={roleForm} layout="vertical" className="mt-4" initialValues={{ is_default: false }}>
           <Form.Item name="name" label="Nama Role" rules={[{ required: true, message: 'Wajib diisi' }]}>
@@ -434,7 +436,7 @@ export default function ClientDetailPage() {
         onCancel={() => setMappingModalOpen(false)}
         onOk={handleAddMapping}
         confirmLoading={createMappingMutation.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         {(roles || []).length === 0 ? (
           <Empty description="Tambahkan role di tab Role Aplikasi terlebih dahulu" />

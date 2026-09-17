@@ -138,6 +138,7 @@ export default function ProfilePage() {
             dataSource={jabatanList}
             rowKey="id"
             pagination={false}
+            scroll={{ x: 'max-content' }}
             locale={{ emptyText: 'Belum ada jabatan' }}
             columns={[
               {

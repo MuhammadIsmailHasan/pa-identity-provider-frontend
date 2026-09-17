@@ -116,6 +116,7 @@ export default function UnavailabilityTab({ employee }: UnavailabilityTabProps) 
         rowKey="id"
         loading={isLoading}
         pagination={false}
+        scroll={{ x: 'max-content' }}
         columns={[
           {
             title: 'Periode',
@@ -172,7 +173,7 @@ export default function UnavailabilityTab({ employee }: UnavailabilityTabProps) 
         onCancel={() => setModalTarget(null)}
         onOk={handleSubmit}
         confirmLoading={createMutation.isPending || updateMutation.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" className="mt-4" initialValues={{ range: [dayjs(), dayjs()] }}>
           <Form.Item name="range" label="Periode" rules={[{ required: true, message: 'Wajib diisi' }]}>

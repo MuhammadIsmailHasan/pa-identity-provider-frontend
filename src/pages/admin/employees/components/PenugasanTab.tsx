@@ -205,6 +205,7 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
         rowKey="id"
         loading={isLoading}
         pagination={false}
+        scroll={{ x: 'max-content' }}
         columns={[
           {
             title: 'Jabatan',
@@ -270,7 +271,7 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
         onCancel={() => setAddModalOpen(false)}
         onOk={handleAdd}
         confirmLoading={createMutation.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}
@@ -375,7 +376,7 @@ export default function PenugasanTab({ employee }: PenugasanTabProps) {
         onCancel={() => setEditTarget(null)}
         onOk={handleEdit}
         confirmLoading={updateMutation.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         {editTarget && (
           <Form form={editForm} layout="vertical" className="mt-4">

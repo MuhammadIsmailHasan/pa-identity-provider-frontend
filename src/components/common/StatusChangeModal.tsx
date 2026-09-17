@@ -55,7 +55,7 @@ export default function StatusChangeModal({ open, employee, onClose }: StatusCha
       onCancel={onClose}
       onOk={handleSubmit}
       confirmLoading={changeStatus.isPending}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item name="status_kepegawaian" label="Status Kepegawaian" rules={[{ required: true }]}>

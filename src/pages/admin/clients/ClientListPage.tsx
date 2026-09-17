@@ -102,10 +102,11 @@ export default function ClientListPage() {
       title: 'Nama Aplikasi',
       dataIndex: 'app_name',
       key: 'app_name',
+      width: 220,
       render: (name: string, record) => (
         <div>
           <div className="font-semibold text-gray-800">{name}</div>
-          <div className="text-xs text-gray-400 font-mono">{record.client_id}</div>
+          <div className="text-xs text-gray-400 font-mono break-all">{record.client_id}</div>
         </div>
       ),
     },
@@ -113,12 +114,14 @@ export default function ClientListPage() {
       title: 'Redirect URI',
       dataIndex: 'redirect_uri',
       key: 'redirect_uri',
-      render: (uri: string) => <span className="font-mono text-xs">{uri}</span>,
+      width: 260,
+      render: (uri: string) => <span className="font-mono text-xs break-all">{uri}</span>,
     },
     {
       title: 'Akses',
       dataIndex: 'access_policy',
       key: 'access_policy',
+      width: 140,
       render: (policy: OAuthClient['access_policy']) => (
         <Tag color={policy === 'all_active' ? 'green' : 'orange'}>{ACCESS_POLICY_LABEL[policy]}</Tag>
       ),
@@ -127,18 +130,21 @@ export default function ClientListPage() {
       title: 'Sinkronisasi',
       dataIndex: 'allow_client_credentials',
       key: 'allow_client_credentials',
+      width: 140,
       render: (allowed: boolean) => (allowed ? <Tag>client_credentials</Tag> : '-'),
     },
     {
       title: 'Status',
       dataIndex: 'is_active',
       key: 'is_active',
+      width: 100,
       render: (active: boolean) => <StatusBadge active={active} />,
     },
     {
       title: 'Aksi',
       key: 'action',
       width: 140,
+      fixed: 'right' as const,
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -188,7 +194,13 @@ export default function ClientListPage() {
       />
 
       <Card className="border-0 shadow-sm">
-        <Table columns={columns} dataSource={clients} rowKey="id" loading={isLoading} />
+        <Table
+          columns={columns}
+          dataSource={clients}
+          rowKey="id"
+          loading={isLoading}
+          scroll={{ x: 'max-content' }}
+        />
       </Card>
 
       {/* Modal Buat Client */}
@@ -197,7 +209,7 @@ export default function ClientListPage() {
         open={createModalOpen}
         onCancel={() => setCreateModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}

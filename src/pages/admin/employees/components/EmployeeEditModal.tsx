@@ -59,7 +59,7 @@ export default function EmployeeEditModal({ open, employee, onClose }: EmployeeE
       onCancel={onClose}
       onOk={handleSubmit}
       confirmLoading={updateMutation.isPending}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" className="mt-4">
         <Form.Item name="name" label="Nama Lengkap (dengan gelar)" rules={[{ required: true, message: 'Wajib diisi' }]}>

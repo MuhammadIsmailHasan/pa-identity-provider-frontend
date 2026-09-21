@@ -1,0 +1,28 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL wajib diisi (alamat publik SSO API)}
+    container_name: idp_portal
+    restart: unless-stopped
+    # nginx menafsirkan sinyal berbeda dari gunicorn: SIGTERM di nginx berarti
+    # "berhenti cepat" (koneksi aktif langsung diputus), BUKAN graceful.
+    # Sinyal graceful nginx yang sesungguhnya adalah SIGQUIT — nginx berhenti
+    # menerima koneksi baru dan menyelesaikan dulu yang sedang berjalan,
+    # baru berhenti. Dipakai di sini supaya perilakunya setara dengan
+    # graceful shutdown SIGTERM di docker-compose.prod.yml SSO backend.
+    stop_signal: SIGQUIT
+    stop_grace_period: 30s
+    # Host port 5173 supaya cocok dengan reverse proxy yang sudah diarahkan
+    # ke Portal SSO di port itu (SSO API sendiri di 8000). Port di dalam
+    # container tetap 8080 (nginx-unprivileged) — cuma sisi host yang beda.
+    ports:
+      - '5173:8080'
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

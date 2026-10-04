@@ -5,11 +5,11 @@ import {
   UserOutlined,
   LockOutlined,
   ArrowRightOutlined,
-  SafetyCertificateFilled,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { useLoginMutation } from '../../hooks/useAuth';
 import { ROUTES } from '../../config/routes';
+import BrandLogo from '../../components/common/BrandLogo';
 import { getErrorMessage } from '../../utils/apiError';
 
 export default function LoginPage() {
@@ -37,17 +37,7 @@ export default function LoginPage() {
       <div className="w-full max-w-5xl mx-auto flex items-center justify-between py-1">
         <div className="flex items-center gap-2">
           {/* Logo Pengadilan Agama Ngawi */}
-          <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-white shadow-sm shrink-0">
-            {/* Scales / Judicial Emblem */}
-            <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-amber-300" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3v18" />
-              <path d="M4 7h16" />
-              <path d="M4 7l-2 5h6l-2-5z" fill="#fcd34d" fillOpacity="0.25" />
-              <path d="M20 7l-2 5h6l-2-5z" fill="#fcd34d" fillOpacity="0.25" />
-              <circle cx="12" cy="7" r="1.5" fill="#fcd34d" />
-              <path d="M8 21h8" />
-            </svg>
-          </div>
+          <BrandLogo size={52} />
           <div>
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-800">
               Pengadilan Agama Ngawi Kelas 1A
@@ -64,9 +54,7 @@ export default function LoginPage() {
         <div className="material-card p-5 sm:p-7 bg-white">
           {/* Header Inside Card */}
           <div className="text-center mb-4">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 mb-2 border border-emerald-100">
-              <SafetyCertificateFilled className="text-2xl" />
-            </div>
+            <BrandLogo size={72} className="mb-2 mx-auto" />
             <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-0">
               Masuk ke Akun
             </h1>

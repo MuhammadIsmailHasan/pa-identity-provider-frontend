@@ -5,13 +5,13 @@ import {
   UserOutlined,
   LockOutlined,
   ArrowRightOutlined,
-  AppstoreOutlined,
   CheckCircleFilled,
   CloseOutlined,
 } from '@ant-design/icons';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '../../config/routes';
+import BrandLogo from '../../components/common/BrandLogo';
 import { getErrorMessage } from '../../utils/apiError';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 import type { User } from '../../types/auth';
@@ -195,9 +195,7 @@ export default function OAuthAuthorizePage() {
       <div className="material-card w-full max-w-lg overflow-hidden bg-white">
         {/* App Header */}
         <div className="p-6 bg-emerald-800 text-white text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 text-amber-300 mb-2">
-            <AppstoreOutlined className="text-xl" />
-          </div>
+          <BrandLogo size={56} className="mb-2 mx-auto" />
           <h2 className="text-lg font-bold text-white mb-0.5">
             {view === 'lanjutkan' ? (
               <>Masuk ke {appInfo?.app_name || clientId}</>

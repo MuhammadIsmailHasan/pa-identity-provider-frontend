@@ -17,12 +17,12 @@ import {
   UserOutlined,
   LogoutOutlined,
   MenuOutlined,
-  SafetyCertificateOutlined,
   DashboardOutlined,
   KeyOutlined,
 } from '@ant-design/icons';
 import { useAuth, useLogoutMutation } from '../hooks/useAuth';
 import { ROUTES } from '../config/routes';
+import BrandLogo from '../components/common/BrandLogo';
 import { resolveAssetUrl } from '../utils/assetUrl';
 import type { MenuProps } from 'antd';
 
@@ -181,16 +181,7 @@ export default function AdminLayout() {
             onClick={() => navigate(ROUTES.DASHBOARD)}
             className="flex items-center gap-3 cursor-pointer group py-1 select-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-emerald-800 flex items-center justify-center text-white shadow-sm shrink-0 group-hover:bg-emerald-700 transition-colors">
-              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-amber-300" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3v18" />
-                <path d="M4 7h16" />
-                <path d="M4 7l-2 5h6l-2-5z" fill="#fcd34d" fillOpacity="0.25" />
-                <path d="M20 7l-2 5h6l-2-5z" fill="#fcd34d" fillOpacity="0.25" />
-                <circle cx="12" cy="7" r="1.5" fill="#fcd34d" />
-                <path d="M8 21h8" />
-              </svg>
-            </div>
+            <BrandLogo size={44} className="group-hover:scale-105 transition-transform" />
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-2 leading-tight">
                 <span className="text-base font-extrabold text-slate-900 tracking-tight">
@@ -264,9 +255,7 @@ export default function AdminLayout() {
       <Drawer
         title={
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-800 text-amber-300 flex items-center justify-center text-xs">
-              <SafetyCertificateOutlined />
-            </div>
+            <BrandLogo size={28} />
             <span className="font-bold text-slate-800 text-sm">Menu Navigasi SSO</span>
           </div>
         }

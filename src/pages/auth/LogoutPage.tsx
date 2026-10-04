@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Spin, Alert, Button } from 'antd';
 import { authService } from '../../services/authService';
 import { ROUTES } from '../../config/routes';
+import BrandLogo from '../../components/common/BrandLogo';
 
 export default function LogoutPage() {
   const [searchParams] = useSearchParams();
@@ -78,6 +79,7 @@ export default function LogoutPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-material-subtle">
       <div className="material-card w-full max-w-md p-8 bg-white text-center">
+        <BrandLogo size={64} className="mb-3 mx-auto" />
         <h2 className="text-xl font-bold text-slate-800 mb-2">Anda telah keluar</h2>
 
         {message && <Alert type="warning" message={message} className="mb-4" />}

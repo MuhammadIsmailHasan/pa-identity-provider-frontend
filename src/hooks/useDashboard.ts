@@ -16,7 +16,7 @@ export function useDashboardStats(enabled: boolean = true) {
       ]);
       return {
         totalEmployees: employees.total,
-        totalClients: clients.length,
+        totalClients: clients.filter((c) => c.is_active).length,
         totalJabatan: jabatan.length,
         totalRoleMappings: roleMappings.length,
       };

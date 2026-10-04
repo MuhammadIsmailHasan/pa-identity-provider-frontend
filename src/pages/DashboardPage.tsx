@@ -147,7 +147,7 @@ export default function DashboardPage() {
                   <AppstoreOutlined className="text-lg" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-semibold uppercase text-slate-400">Aplikasi SSO</div>
+                  <div className="text-[11px] font-semibold uppercase text-slate-400">Aplikasi Aktif</div>
                   <div className="text-xl font-extrabold text-slate-800">{statsData.totalClients}</div>
                 </div>
               </div>

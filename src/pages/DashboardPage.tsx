@@ -14,6 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOAuthClients } from '../hooks/useClients';
 import { useDashboardStats } from '../hooks/useDashboard';
 import type { OAuthClient } from '../types/oauth';
+import { getLaunchUrl } from '../utils/launchUrl';
 
 
 export default function DashboardPage() {
@@ -36,7 +37,7 @@ export default function DashboardPage() {
   }, [clientsData, search]);
 
   const handleLaunchApp = (client: OAuthClient) => {
-    window.open(`${client.redirect_uri}`, '_blank');
+    window.open(getLaunchUrl(client), '_blank', 'noopener');
   };
 
   // Color palette for cards to make them vibrant and distinct

@@ -60,6 +60,7 @@ export default function ClientListPage() {
       ...rest,
       post_logout_redirect_uri: rest.post_logout_redirect_uri || null,
       backchannel_logout_uri: rest.backchannel_logout_uri || null,
+      launch_url: rest.launch_url || null,
       allowed_scopes: scopes && scopes.length > 0 ? scopes.join(' ') : null,
     };
     try {
@@ -228,6 +229,14 @@ export default function ClientListPage() {
           </Form.Item>
           <Form.Item name="allowed_origins" label="Allowed Origins (opsional)">
             <Input placeholder="https://sip.instansi.go.id" />
+          </Form.Item>
+          <Form.Item
+            name="launch_url"
+            label="URL peluncuran (opsional)"
+            extra="Pintu masuk login aplikasi yang dibuka dari dashboard. Kosong = alamat dasar aplikasi."
+            rules={[{ type: 'url', message: 'URL tidak valid' }]}
+          >
+            <Input placeholder="https://sip.instansi.go.id/auth/sso" />
           </Form.Item>
           <Form.Item
             name="post_logout_redirect_uri"

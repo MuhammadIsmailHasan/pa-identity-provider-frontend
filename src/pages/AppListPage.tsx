@@ -4,6 +4,7 @@ import PageHeader from '../components/common/PageHeader';
 import EmptyState from '../components/common/EmptyState';
 import { useOAuthClients } from '../hooks/useClients';
 import type { OAuthClient } from '../types/oauth';
+import { getLaunchUrl } from '../utils/launchUrl';
 
 const { Text, Title } = Typography;
 
@@ -12,7 +13,7 @@ export default function AppListPage() {
   const clients = (clientsData || []).filter((c) => c.is_active);
 
   const handleOpenApp = (client: OAuthClient) => {
-    window.open(`${client.redirect_uri}`, '_blank');
+    window.open(getLaunchUrl(client), '_blank', 'noopener');
   };
 
   const getAppColor = (index: number) => {

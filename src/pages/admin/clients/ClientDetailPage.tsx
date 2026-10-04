@@ -91,6 +91,7 @@ export default function ClientDetailPage() {
       allowed_origins: client.allowed_origins,
       post_logout_redirect_uri: client.post_logout_redirect_uri,
       backchannel_logout_uri: client.backchannel_logout_uri,
+      launch_url: client.launch_url,
       access_policy: client.access_policy,
       allow_client_credentials: client.allow_client_credentials,
       scopes: client.allowed_scopes ? client.allowed_scopes.split(' ') : [],
@@ -107,6 +108,7 @@ export default function ClientDetailPage() {
         ...rest,
         post_logout_redirect_uri: rest.post_logout_redirect_uri || null,
         backchannel_logout_uri: rest.backchannel_logout_uri || null,
+        launch_url: rest.launch_url || null,
         allowed_scopes: scopes && scopes.length > 0 ? scopes.join(' ') : null,
       };
       await updateClientMutation.mutateAsync({ id: clientId, data: payload });
@@ -266,6 +268,9 @@ export default function ClientDetailPage() {
           <Descriptions.Item label="Allowed Origins">
             <span className="font-mono text-xs">{client.allowed_origins || '-'}</span>
           </Descriptions.Item>
+          <Descriptions.Item label="URL peluncuran" span={2}>
+            <span className="font-mono text-xs">{client.launch_url || '- (memakai alamat dasar aplikasi)'}</span>
+          </Descriptions.Item>
           <Descriptions.Item label="URL setelah logout" span={2}>
             <span className="font-mono text-xs">{client.post_logout_redirect_uri || '-'}</span>
           </Descriptions.Item>
@@ -395,6 +400,14 @@ export default function ClientDetailPage() {
             <Input />
           </Form.Item>
           <Form.Item name="allowed_origins" label="Allowed Origins">
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="launch_url"
+            label="URL peluncuran"
+            extra="Pintu masuk login aplikasi yang dibuka dari dashboard (mis. https://aplikasi/auth/sso). Jangan isi dengan URL callback."
+            rules={[{ type: 'url', message: 'URL tidak valid' }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item

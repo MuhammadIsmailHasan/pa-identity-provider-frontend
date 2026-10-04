@@ -8,6 +8,7 @@ export interface OAuthClient {
   allowed_origins: string | null;
   post_logout_redirect_uri: string | null;
   backchannel_logout_uri: string | null;
+  launch_url: string | null;
   access_policy: AccessPolicy;
   allow_client_credentials: boolean;
   allowed_scopes: string | null;
@@ -21,6 +22,7 @@ export interface OAuthClientCreate {
   allowed_origins?: string | null;
   post_logout_redirect_uri?: string | null;
   backchannel_logout_uri?: string | null;
+  launch_url?: string | null;
   access_policy: AccessPolicy;
   allow_client_credentials: boolean;
   allowed_scopes?: string | null;
@@ -32,6 +34,7 @@ export interface OAuthClientUpdate {
   allowed_origins?: string | null;
   post_logout_redirect_uri?: string | null;
   backchannel_logout_uri?: string | null;
+  launch_url?: string | null;
   access_policy?: AccessPolicy;
   allow_client_credentials?: boolean;
   allowed_scopes?: string | null;

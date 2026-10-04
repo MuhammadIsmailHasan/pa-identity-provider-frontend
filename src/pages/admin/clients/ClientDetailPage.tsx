@@ -89,6 +89,8 @@ export default function ClientDetailPage() {
       app_name: client.app_name,
       redirect_uri: client.redirect_uri,
       allowed_origins: client.allowed_origins,
+      post_logout_redirect_uri: client.post_logout_redirect_uri,
+      backchannel_logout_uri: client.backchannel_logout_uri,
       access_policy: client.access_policy,
       allow_client_credentials: client.allow_client_credentials,
       scopes: client.allowed_scopes ? client.allowed_scopes.split(' ') : [],
@@ -103,6 +105,8 @@ export default function ClientDetailPage() {
       const { scopes, ...rest } = values;
       const payload: OAuthClientUpdate = {
         ...rest,
+        post_logout_redirect_uri: rest.post_logout_redirect_uri || null,
+        backchannel_logout_uri: rest.backchannel_logout_uri || null,
         allowed_scopes: scopes && scopes.length > 0 ? scopes.join(' ') : null,
       };
       await updateClientMutation.mutateAsync({ id: clientId, data: payload });
@@ -262,6 +266,12 @@ export default function ClientDetailPage() {
           <Descriptions.Item label="Allowed Origins">
             <span className="font-mono text-xs">{client.allowed_origins || '-'}</span>
           </Descriptions.Item>
+          <Descriptions.Item label="URL setelah logout" span={2}>
+            <span className="font-mono text-xs">{client.post_logout_redirect_uri || '-'}</span>
+          </Descriptions.Item>
+          <Descriptions.Item label="Back-channel logout URL" span={2}>
+            <span className="font-mono text-xs">{client.backchannel_logout_uri || '-'}</span>
+          </Descriptions.Item>
           <Descriptions.Item label="Sinkronisasi">{client.allow_client_credentials ? 'Ya' : 'Tidak'}</Descriptions.Item>
           <Descriptions.Item label="Scope" span={2}>
             {client.allowed_scopes
@@ -385,6 +395,22 @@ export default function ClientDetailPage() {
             <Input />
           </Form.Item>
           <Form.Item name="allowed_origins" label="Allowed Origins">
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="post_logout_redirect_uri"
+            label="URL setelah logout"
+            extra="Tujuan tautan &quot;Kembali ke aplikasi&quot; di halaman logout SSO. Harus sama dengan SSO_POST_LOGOUT_REDIRECT_URI di aplikasi (mis. https://aplikasi/login)."
+            rules={[{ type: 'url', message: 'URL tidak valid' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="backchannel_logout_uri"
+            label="Back-channel logout URL"
+            extra="Endpoint aplikasi yang diberi tahu saat pegawai logout dari SSO (opsional)."
+            rules={[{ type: 'url', message: 'URL tidak valid' }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item name="access_policy" label="Kebijakan Akses">

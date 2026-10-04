@@ -58,6 +58,8 @@ export default function ClientListPage() {
     const { scopes, ...rest } = values;
     const payload: OAuthClientCreate = {
       ...rest,
+      post_logout_redirect_uri: rest.post_logout_redirect_uri || null,
+      backchannel_logout_uri: rest.backchannel_logout_uri || null,
       allowed_scopes: scopes && scopes.length > 0 ? scopes.join(' ') : null,
     };
     try {
@@ -226,6 +228,21 @@ export default function ClientListPage() {
           </Form.Item>
           <Form.Item name="allowed_origins" label="Allowed Origins (opsional)">
             <Input placeholder="https://sip.instansi.go.id" />
+          </Form.Item>
+          <Form.Item
+            name="post_logout_redirect_uri"
+            label="URL setelah logout (opsional)"
+            extra="Tujuan tautan &quot;Kembali ke aplikasi&quot; di halaman logout SSO."
+            rules={[{ type: 'url', message: 'URL tidak valid' }]}
+          >
+            <Input placeholder="https://sip.instansi.go.id/login" />
+          </Form.Item>
+          <Form.Item
+            name="backchannel_logout_uri"
+            label="Back-channel logout URL (opsional)"
+            rules={[{ type: 'url', message: 'URL tidak valid' }]}
+          >
+            <Input placeholder="https://sip.instansi.go.id/auth/sso/backchannel-logout" />
           </Form.Item>
           <Form.Item
             name="access_policy"
